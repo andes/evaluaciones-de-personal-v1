@@ -1,0 +1,36 @@
+# compiled output
+/dist
+/tmp
+/build
+/src/**/*.js
+/src/**/*.map
+*.scssc
+# dependencies
+/node_modules
+/bower_components
+# IDEs and editors
+/.idea
+/.vscode
+.project
+.classpath
+*.launch
+.settings/
+# misc
+/.angular/cache
+/.sass-cache
+/connect.lock
+/coverage/*
+/libpeerconnection.log
+npm-debug.log
+testem.log
+/typings
+# e2e
+/e2e/*.js
+/e2e/*.map
+#Angular Files
+apiKeyMaps.ts
+projects/portal/src/environments/configuracion.ts
+#System Files
+.DS_Store
+Thumbs.db
+/.nx

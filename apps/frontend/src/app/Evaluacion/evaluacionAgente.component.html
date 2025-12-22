@@ -1,0 +1,227 @@
+<div class="d-flex flex-column align-items-center mb-4">
+    <app-header></app-header>
+</div>
+
+<div class="d-flex justify-content-center mt-4">
+    <div class="col-lg-9 col-md-10 col-12 contenedor-listado">
+        <div class="card mt-3">
+
+            <!-- CABECERA -->
+            <div class="text-center mb-4">
+
+                <h2 class="titulo-seccion">
+                    Detalle Evaluación de Agentes
+                </h2>
+
+                <div class="subtitulo-seccion mt-2">
+
+                    <span *ngIf="cabecera?.periodo">
+                        <strong>Período:</strong>
+                        {{ cabecera.periodo | date:'MM/yyyy' }}
+                    </span>
+
+                    <span *ngIf="cabecera?.periodo && cabecera?.agenteevaluador">
+                        &nbsp; / &nbsp;
+                    </span>
+
+                    <span *ngIf="cabecera?.agenteevaluador">
+                        <strong>Evaluador:</strong>
+                        {{ cabecera.agenteevaluador.nombreUsuarioEvaluador }}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- BODY -->
+            <div class="card-body p-3">
+
+                <!-- ID Oculto -->
+                <div class="form-group mb-3 d-none">
+                    <input id="idCabecera" class="form-control" [value]="idCabecera" readonly />
+                </div>
+
+                <div class="card mt-4 w-100">
+                    <div class="card-body">
+                        <div class="d-flex flex-column gap-3">
+
+                            <!-- BUSCAR AGENTE -->
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <label for="busquedaAgente" class="form-label fw-semibold mb-0">Agente:</label>
+
+                                <input id="busquedaAgente" type="text" class="form-control" [(ngModel)]="filtroAgente"
+                                       placeholder="Buscar" style="width:150px;" />
+
+                                <select class="form-select" [(ngModel)]="agenteSeleccionado" style="min-width:250px;">
+                                    <option [ngValue]="null" disabled selected>-- Elegí un agente --</option>
+                                    <option *ngFor="let agente of agentesFiltrados" [ngValue]="agente">
+                                        {{ agente.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- TIPO EVALUACIÓN + BOTÓN -->
+                            <div class="d-flex justify-content-between align-items-center w-100 flex-wrap gap-2">
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <label class="form-label fw-semibold mb-0">Tipo de Evaluación:</label>
+
+                                    <select class="form-select" [(ngModel)]="idTipoEvaluacion" style="min-width:250px;">
+                                        <option [ngValue]="null" disabled selected>-- Seleccioná tipo --</option>
+                                        <option *ngFor="let tipo of tiposEvaluacion" [ngValue]="tipo._id">
+                                            {{ tipo.nombre }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="d-flex mt-3 mt-md-0">
+                                    <button class="btn btn-outline-secondary me-2" (click)="volverACabecera()"
+                                            title="Volver">
+                                        <i class="fas fa-door-open"></i>
+                                    </button>
+                                    <button class="btn btn-outline-success me-2"
+                                            (click)="evaluarAgente(agenteSeleccionado)">
+                                        Agregar
+                                    </button>
+
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- LISTADO DE AGENTES YA EVALUADOS -->
+                    <div class="card mt-4">
+                        <div class="card-body p-3">
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover mb-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th class="oculto text-center">ID Evaluación Cabecera</th>
+
+                                            <th class="text-center">Legajo</th>
+                                            <th class="text-center">Nombre</th>
+                                            <th class="text-center">Evaluar</th>
+                                            <th class="text-center">Cerrar</th>
+                                            <th class="text-center">Imprimir</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        <tr *ngFor="let agente of agentesYaEvaluados">
+                                            <!-- ID oculto -->
+                                            <td class="oculto text-center">
+                                                {{ agente.idPlanillaEvaluacionCabecera || idCabecera }}
+                                            </td>
+
+                                            <!-- Legajo y nombre -->
+                                            <td class="text-center">{{ agente.legajo }}</td>
+                                            <td>{{ agente.nombreAgenteEvaluado }}</td>
+
+                                            <!-- Botón para ver ítems -->
+                                            <td class="text-center">
+                                                <ng-container
+                                                              *ngIf="agente.idAgenteEvaluado && (agente.idPlanillaEvaluacionCabecera || idCabecera); else disabledBtn">
+                                                    <button class="btn btn-sm btn-outline-primary"
+                                                            (click)="verItemsEvaluacion(agente)">
+                                                        <i class="fas fa-file-alt"></i>
+                                                    </button>
+                                                </ng-container>
+
+                                                <ng-template #disabledBtn>
+                                                    <button class="btn btn-sm btn-secondary" disabled>
+                                                        <i class="fas fa-file-alt"></i>
+                                                    </button>
+                                                </ng-template>
+                                            </td>
+
+                                            <!-- Botón cerrar -->
+                                            <td class="text-center">
+                                                <button class="btn btn-sm"
+                                                        [ngClass]="agente.cerrado ? 'btn-outline-secondary' : 'btn-outline-danger'"
+                                                        (click)="abrirModalCerrar(
+                                                agente.idPlanillaEvaluacionCabecera || idCabecera,
+                                                agente.idAgenteEvaluado,
+                                                agente.nombreAgenteEvaluado
+                                              )" [disabled]="agente.cerrado">
+                                                    <i
+                                                       [ngClass]="agente.cerrado ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
+                                                </button>
+                                            </td>
+
+                                            <!-- Botón imprimir -->
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-secondary"
+                                                        (click)="imprimirEvaluacion(agente)"
+                                                        title="Imprimir evaluación">
+                                                    <i class="fas fa-print"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Mensaje si no hay agentes -->
+                                        <tr *ngIf="!agentesYaEvaluados?.length">
+                                            <td colspan="6" class="text-center py-3">
+                                                No hay agentes evaluados aún.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div *ngIf="!cabecera && !idCabecera" class="alert alert-info mt-3">
+                        No se encontró información de la cabecera.
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CERRAR EVALUACIÓN -->
+<div *ngIf="mostrarModalCerrar" class="modal-backdrop-custom">
+    <div class="custom-modal">
+        <div class="custom-modal-header">
+            <h5 class="modal-title">🔒 Cerrar Evaluación</h5>
+            <p class="mb-0 text-muted small">
+                Agente: <strong>{{ nombreAgenteCerrar }}</strong>
+            </p>
+            <button type="button" class="close" (click)="cerrarModalCerrar()">
+                <span>&times;</span>
+            </button>
+        </div>
+
+        <div class="custom-modal-body">
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Motivo de Cierre</label>
+                <select class="form-select" [(ngModel)]="motivoSeleccionado">
+                    <option [ngValue]="null" disabled selected>Seleccione un motivo</option>
+                    <option *ngFor="let motivo of motivosCierre" [ngValue]="motivo">
+                        {{ motivo.nombre }}
+                    </option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Fecha de Cierre</label>
+                <input type="date" class="form-control" [(ngModel)]="fechaCierre" />
+            </div>
+
+        </div>
+
+        <div class="custom-modal-footer text-end">
+            <button class="btn btn-secondary" (click)="cerrarModalCerrar()">Cancelar</button>
+            <button class="btn btn-success" (click)="confirmarCierre()">Cerrar Evaluación</button>
+        </div>
+    </div>
+</div>

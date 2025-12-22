@@ -1,0 +1,43 @@
+.titulo-seccion {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.7rem;
+    letter-spacing: 1px;
+}
+
+.modal-backdrop-custom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+}
+
+.custom-modal {
+    background: white;
+    padding: 1rem;
+    border-radius: 10px;
+    width: 400px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.custom-modal-header,
+.custom-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.custom-modal-body {
+    margin: 1rem 0;
+}
+
+.header-transparente {
+    background: transparent !important;
+    border-bottom: none;
+}

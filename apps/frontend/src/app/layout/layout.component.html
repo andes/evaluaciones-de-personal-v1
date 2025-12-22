@@ -1,0 +1,44 @@
+<!-- layout.component.html -->
+
+<!-- Header fijo con navegación -->
+<i class="mobile-nav-toggle d-xl-none bi bi-list" (click)="toggleMenu()"></i>
+
+<header id="header" class="header d-flex align-items-center light-background sticky-top">
+    <div class="container-fluid position-relative d-flex align-items-center justify-content-between">
+        <a routerLink="/" class="logo d-flex align-items-center me-auto me-xl-0">
+            <h1 class="sitename">Eval. Personal</h1>
+        </a>
+
+        <nav id="navmenu" class="navmenu">
+            <ul>
+                <li><a routerLink="/home" routerLinkActive="active">Home</a></li>
+                <li><a routerLink="/acercade" routerLinkActive="active">Acerca de</a></li>
+                <li><a routerLink="/clientes" routerLinkActive="active">Conceptos de evaluacion</a></li>
+                <li><a routerLink="/servicios" routerLinkActive="active">Datos generales</a></li>
+                <li><a routerLink="/servicios" routerLinkActive="active">Evaluaciones</a></li>
+                <li><a routerLink="/login" routerLinkActive="active">Login</a></li>
+                <li><a routerLink="/contact" routerLinkActive="active">Contacto</a></li>
+            </ul>
+            <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+    </div>
+</header>
+
+<!-- Contenido principal -->
+<main class="main">
+    <div class="content-wrapper" [ngClass]="{ 'login-wrapper': isLoginRoute }">
+        <router-outlet></router-outlet>
+    </div>
+</main>
+
+<!-- Footer fijo 
+<footer id="footer" class="footer light-background">
+    <div class="container">
+        <div class="social-links d-flex justify-content-center">
+            <a href="#"><i class="bi bi-twitter-x"></i></a>
+            <a href="#"><i class="bi bi-facebook"></i></a>
+            <a href="#"><i class="bi bi-instagram"></i></a>
+            <a href="#"><i class="bi bi-linkedin"></i></a>
+        </div>
+    </div>
+</footer>-->

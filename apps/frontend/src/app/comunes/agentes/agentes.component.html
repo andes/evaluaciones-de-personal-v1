@@ -1,0 +1,123 @@
+<app-header></app-header>
+
+<div class="contenedor-principal">
+    <div class="container-fluid mt-4 px-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="card shadow rounded-3">
+                    <div class="card-body">
+
+                        <!-- 🔹 Título -->
+                        <div class="text-center mb-4">
+                            <h2 class="titulo-seccion">Agentes</h2>
+                        </div>
+
+                        <!-- 🔹 Botones -->
+                        <div class="d-flex justify-content-end mb-3">
+                            <button class="btn btn-outline-secondary me-2" (click)="volver()" title="Volver">
+                                <i class="fas fa-door-open"></i>
+                            </button>
+
+                            <button class="btn btn-success" (click)="abrirModal()" title="Nuevo Agente">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="Buscar por nombre"
+                                   [(ngModel)]="filtroNombre" (ngModelChange)="filtrarAgentes()" />
+                        </div>
+                        @if (cargando) {
+                        <div class="text-center my-3">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p>Cargando agentes...</p>
+                        </div>
+                        }
+
+
+                        <div class="table-responsive tabla-scroll">
+                            <table class="table table-striped align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Legajo</th>
+                                        <th>DNI</th>
+                                        <th>Nombre</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr *ngFor="let a of agentesFiltrados">
+                                        <td>{{ a.legajo }}</td>
+                                        <td>{{ a.dni }}</td>
+                                        <td>{{ a.nombre }}</td>
+                                        <td class="text-center">
+                                            <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(a)"
+                                                    title="Editar">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" (click)="eliminarAgente(a._id!)"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Modal -->
+    <div *ngIf="mostrarModal" class="modal-overlay">
+        <div class="modal-custom animate__animated animate__fadeInDown">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    {{ esEdicion ? 'Editar Agente' : 'Nuevo Agente' }}
+                </h5>
+                <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+            </div>
+
+            <div class="modal-body">
+                <form (ngSubmit)="guardarAgente()" #formAgente="ngForm">
+
+                    <div class="mb-3">
+                        <label for="legajo" class="form-label">Legajo</label>
+                        <input type="text" id="legajo" name="legajo" class="form-control"
+                               [(ngModel)]="nuevoAgente.legajo" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="dni" class="form-label">DNI</label>
+                        <input type="text" id="dni" name="dni" class="form-control" [(ngModel)]="nuevoAgente.dni"
+                               required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" id="nombre" name="nombre" class="form-control"
+                               [(ngModel)]="nuevoAgente.nombre" required />
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-end">
+                        <button class="btn btn-primary" type="submit" [disabled]="formAgente.invalid">
+                            {{ esEdicion ? 'Actualizar' : 'Guardar' }}
+                        </button>
+
+                        <button class="btn btn-secondary ms-2" type="button" (click)="cerrarModal()">
+                            Cancelar
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,10 @@
+.contenedor-cuadro button {
+    display: flex;
+    align-items: center;
+    /* Centra verticalmente el contenido */
+}
+
+.contenedor-cuadro .material-icons {
+    margin-right: 8px;
+    /* Espacio entre el ícono y el texto */
+}
