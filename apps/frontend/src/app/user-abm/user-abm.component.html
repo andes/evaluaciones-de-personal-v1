@@ -1,0 +1,128 @@
+<app-header></app-header>
+
+<div class="contenedor-principal">
+    <div class="container-fluid mt-4 px-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="card shadow rounded-3">
+                    <div class="card-body">
+
+                        <!-- 🔹 Título -->
+                        <div class="text-center mb-4">
+                            <h2 class="titulo-seccion">Parámetros / Usuarios</h2>
+                        </div>
+
+                        <!-- 🔹 Botones de acción -->
+                        <div class="d-flex justify-content-end mb-3">
+                            <button class="btn btn-outline-secondary me-2" (click)="volver()" title="Volver">
+                                <i class="fas fa-door-open"></i>
+                            </button>
+
+                            <button class="btn btn-success" (click)="abrirModal()" title="Nuevo Usuario">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+
+                        <!-- 🔹 Tabla -->
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>DNI</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let u of usuarios">
+                                        <td>{{ u.dni }}</td>
+                                        <td>{{ u.nombre }}</td>
+                                        <td>{{ u.email }}</td>
+                                        <td>{{ u.rol }}</td>
+                                        <td class="text-center">
+                                            <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(u)"
+                                                    title="Editar">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" (click)="eliminarUsuario(u._id)"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal de Usuario -->
+    <div *ngIf="mostrarModal" class="modal-overlay" [attr.role]="'dialog'" [attr.aria-modal]="'true'">
+        <div class="modal-custom animate__animated animate__fadeInDown" tabindex="-1">
+            <div class="modal-header d-flex justify-content-between align-items-center">
+                <h5 class="modal-title">
+                    {{ esEdicion ? 'Editar Usuario' : 'Nuevo Usuario' }}
+                </h5>
+                <button type="button" class="btn-close" (click)="cerrarModal()" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <form (ngSubmit)="guardarUsuario()" #formUsuario="ngForm" autocomplete="off">
+                    <div class="mb-3">
+                        <label for="dni" class="form-label">DNI</label>
+                        <input type="text" id="dni" name="dni" class="form-control" [(ngModel)]="nuevoUsuario.dni"
+                               required autofocus />
+                    </div>
+
+                    <div class="mb-3" *ngIf="!esEdicion">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" id="password" name="password" class="form-control"
+                               [(ngModel)]="nuevoUsuario.password" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" id="nombre" name="nombre" class="form-control"
+                               [(ngModel)]="nuevoUsuario.nombre" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" name="email" class="form-control"
+                               [(ngModel)]="nuevoUsuario.email" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="rol" class="form-label">Rol</label>
+                        <select id="rol" name="rol" class="form-select" [(ngModel)]="nuevoUsuario.rol"
+                                [ngClass]="{ 'is-invalid': formUsuario.submitted && !nuevoUsuario.rol }" required>
+                            <option value="" disabled [selected]="!nuevoUsuario.rol">Seleccione un rol</option>
+                            <option value="administrador">Administrador</option>
+                            <option value="usuario">Usuario</option>
+                            <option value="lectura">Lectura</option>
+                            <option value="externo">Externo</option>
+                        </select>
+                        <div *ngIf="formUsuario.submitted && !nuevoUsuario.rol" class="invalid-feedback">
+                            Seleccione un rol.
+                        </div>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary" [disabled]="formUsuario.invalid">
+                            {{ esEdicion ? 'Actualizar' : 'Guardar' }}
+                        </button>
+                        <button type="button" class="btn btn-secondary ms-2" (click)="cerrarModal()">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>

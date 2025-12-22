@@ -1,0 +1,146 @@
+<section class="menu section py-5">
+    <div class="container mb-5">
+        <!-- CONTENEDOR PRINCIPAL DEL HEADER -->
+        <div class="text-center mb-3">
+            <h2 class="mb-1">Menú</h2>
+
+            <!-- Usuario centrado y más pequeño -->
+            <div class="user-info d-flex justify-content-center align-items-center small text-muted">
+                <i class="bi bi-person-circle fs-5 me-1"></i>
+                <span class="fw-bold me-1">Usuario:</span>
+                <span>{{ nombreUsuario }}</span>
+                <span class="ms-2 badge bg-secondary">{{ rolUsuario }}</span>
+            </div>
+        </div>
+
+
+
+    </div>
+
+    <div class="row justify-content-center g-4">
+        <!-- Opción 1: Parámetros -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card menu-item h-100 p-3">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-gear-fill fs-3 me-2 text-primary"></i>
+                    <h4 class="mb-0">Parámetros</h4>
+                </div>
+                <ul class="list-unstyled ps-3">
+                    <li>
+                        <a [routerLink]="['/userabm']" class="text-decoration-none d-block py-1">
+                            Usuarios
+                        </a>
+                    </li>
+                    <li><a href="#" class="text-decoration-none d-block py-1">Roles</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Opción 2: Comunes -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card menu-item h-100 p-3">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-bar-chart-fill fs-3 me-2 text-primary"></i>
+                    <h4 class="mb-0">Comunes</h4>
+                </div>
+                <ul class="list-unstyled ps-3">
+                    <li>
+                        <a [routerLink]="['/categoria']" class="text-decoration-none d-block py-1">
+                            Categorías
+                        </a>
+                    </li>
+
+
+                    <li>
+                        <a [routerLink]="['/items']" class="text-decoration-none d-block py-1">
+                            Ítems
+                        </a>
+                    </li>
+                    <li>
+                        <a [routerLink]="['/tipoEvaluacion']" class="text-decoration-none d-block py-1">
+                            Tipo Evaluacion
+                        </a>
+                    </li>
+                    <li>
+                        <a [routerLink]="['/servicios']" class="text-decoration-none d-block py-1">Servicios</a>
+                    </li>
+
+                    <li>
+                        <a [routerLink]="['/agentes']" class="text-decoration-none d-block py-1">Agentes</a>
+                    </li>
+
+
+                </ul>
+            </div>
+        </div>
+
+        <!-- Opción 3: Planilla Evaluación -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card menu-item h-100 p-3">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-card-checklist fs-3 me-2 text-primary"></i>
+                    <h4 class="mb-0">Planilla Evaluación</h4>
+                </div>
+                <ul class="list-unstyled ps-3">
+                    <li>
+                        <a [routerLink]="['/planillaed']" class="text-decoration-none d-block py-1">
+                            Planilla de Evaluación
+                        </a>
+
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Opción 4: Evaluación -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card menu-item h-100 p-3">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-clipboard-check fs-3 me-2 text-primary"></i>
+                    <h4 class="mb-0">Evaluación</h4>
+                </div>
+                <ul class="list-unstyled ps-3">
+                    <li>
+                        <button class="btn btn-link text-decoration-none d-block py-1" style="padding-left: 0"
+                                [routerLink]="['/evaluacion-cabecera']">
+                            Crear Evaluaciones
+                        </button>
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+
+        <!-- Opción 5: Informes -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card menu-item h-100 p-3">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-file-earmark-bar-graph fs-3 me-2 text-primary"></i>
+                    <h4 class="mb-0">Informes</h4>
+                </div>
+                <ul class="list-unstyled ps-3">
+                    <li>
+                        <a routerLink="/evaluaciones-listado" routerLinkActive="fw-bold text-primary"
+                           class="text-decoration-none d-block py-1">
+                            Evaluaciones
+                        </a>
+                    </li>
+                    <li><a href="#" class="text-decoration-none d-block py-1">Promedios</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Opción 6: Acerca de -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card menu-item h-100 p-3">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-info-circle fs-3 me-2 text-primary"></i>
+                    <h4 class="mb-0">Acerca de</h4>
+                </div>
+                <ul class="list-unstyled ps-3">
+                    <li><a href="#" class="text-decoration-none d-block py-1">Acerca de</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020", // Versión de JS de salida
+    "module": "CommonJS", // Node usa CommonJS
+    "rootDir": "src", // Carpeta raíz de tu código TS
+    "outDir": "dist", // Carpeta donde se compila JS
+    "strict": true, // Habilita todas las comprobaciones de TS
+    "moduleResolution": "node", // 🔑 Para resolver imports correctamente
+    "esModuleInterop": true, // 🔑 Para default import de CommonJS
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true, // Permite importar JSON
+    "skipLibCheck": true // Ignora chequear tipos de node_modules
+  },
+  "include": [
+    "src/**/*.ts"
+  ], // Todos los TS dentro de src
+  "exclude": [
+    "node_modules",
+    "dist"
+  ] // Ignorar node_modules y dist
+}

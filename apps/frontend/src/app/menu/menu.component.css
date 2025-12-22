@@ -1,0 +1,70 @@
+/* ====== Tarjetas del menú ====== */
+.menu-item {
+    background-color: #f8f9fa;
+    /* gris suave */
+    border-radius: 10px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+}
+
+.menu-item:hover {
+    transform: translateY(-5px);
+    background-color: #e9ecef;
+    /* un poco más oscuro */
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+/* ====== Enlaces ====== */
+.menu-item ul li a {
+    color: #495057;
+    /* texto gris oscuro */
+    transition: background 0.3s, color 0.3s;
+}
+
+.menu-item ul li a:hover {
+    background: rgba(0, 123, 255, 0.1);
+    border-radius: 6px;
+    color: #007bff;
+}
+
+/* ====== Íconos ====== */
+.menu-item i {
+    min-width: 28px;
+    text-align: center;
+}
+
+/* ====== Títulos ====== */
+h2 {
+    font-weight: bold;
+    color: #007bff;
+}
+
+/* ====== Subtítulo ====== */
+p {
+    font-size: 1.1rem;
+    color: #555;
+}
+
+/* ====== Badges ====== */
+.badge {
+    font-size: 0.85rem;
+}
+
+/* ====== Información de usuario ====== */
+.user-info {
+    font-size: 1rem;
+    color: #333;
+    text-align: left;
+}
+
+/* ====== Responsividad ====== */
+@media (max-width: 768px) {
+    .menu-item {
+        margin: 0 auto;
+    }
+
+    .user-info {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+}

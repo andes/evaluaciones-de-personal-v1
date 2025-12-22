@@ -1,0 +1,98 @@
+<app-header></app-header>
+
+<div class="contenedor-principal">
+    <div class="container-fluid mt-4 px-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="card shadow rounded-3">
+                    <div class="card-body">
+
+                        <!-- 🔹 Título -->
+                        <div class="text-center mb-4">
+                            <h2 class="titulo-seccion">Parámetros / Categorías</h2>
+                        </div>
+
+                        <!-- 🔹 Botones -->
+                        <div class="d-flex justify-content-end mb-3">
+                            <button class="btn btn-outline-secondary me-2" (click)="volver()" title="Volver">
+                                <i class="fas fa-door-open"></i>
+                            </button>
+
+                            <button class="btn btn-success" (click)="abrirModal()" title="Nueva Categoría">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+
+                        <!-- 🔹 Tabla -->
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Descripción</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr *ngFor="let c of categorias">
+                                        <td>{{ c.descripcion }}</td>
+
+                                        <td class="text-center">
+                                            <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(c)"
+                                                    title="Editar">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+
+                                            <button class="btn btn-danger btn-sm" (click)="eliminarCategoria(c._id)"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Modal -->
+    <div *ngIf="mostrarModal" class="modal-overlay">
+        <div class="modal-custom animate__animated animate__fadeInDown">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    {{ esEdicion ? 'Editar Categoría' : 'Nueva Categoría' }}
+                </h5>
+                <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+            </div>
+
+            <div class="modal-body">
+                <form (ngSubmit)="guardarCategoria()" #formCategoria="ngForm">
+
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <input type="text" id="descripcion" name="descripcion" class="form-control"
+                               [(ngModel)]="nuevaCategoria.descripcion" required />
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-end">
+                        <button class="btn btn-primary" type="submit" [disabled]="formCategoria.invalid">
+                            {{ esEdicion ? 'Actualizar' : 'Guardar' }}
+                        </button>
+
+                        <button class="btn btn-secondary ms-2" type="button" (click)="cerrarModal()">
+                            Cancelar
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>

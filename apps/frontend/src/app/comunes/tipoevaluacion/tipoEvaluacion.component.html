@@ -1,0 +1,105 @@
+<app-header></app-header>
+
+<div class="contenedor-principal">
+    <div class="container-fluid mt-4 px-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="card shadow rounded-3">
+                    <div class="card-body">
+
+                        <!-- 🔹 Título -->
+                        <div class="text-center mb-4">
+                            <h2 class="titulo-seccion">Parámetros / Tipos de Evaluación</h2>
+                        </div>
+
+                        <!-- 🔹 Botones -->
+                        <div class="d-flex justify-content-end mb-3">
+                            <button class="btn btn-outline-secondary me-2" (click)="volver()" title="Volver">
+                                <i class="fas fa-door-open"></i>
+                            </button>
+
+                            <button class="btn btn-success" (click)="abrirModal()" title="Nuevo Tipo de Evaluación">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+
+                        <!-- 🔹 Tabla -->
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr *ngFor="let t of tipos">
+                                        <td>{{ t.nombre }}</td>
+                                        <td>{{ t.descripcion }}</td>
+
+                                        <td class="text-center">
+                                            <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(t)"
+                                                    title="Editar">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+
+                                            <button class="btn btn-danger btn-sm" (click)="eliminarTipo(t._id!)"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Modal -->
+    <div *ngIf="mostrarModal" class="modal-overlay">
+        <div class="modal-custom animate__animated animate__fadeInDown">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    {{ esEdicion ? 'Editar Tipo de Evaluación' : 'Nuevo Tipo de Evaluación' }}
+                </h5>
+                <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+            </div>
+
+            <div class="modal-body">
+                <form (ngSubmit)="guardarTipo()" #formTipo="ngForm">
+
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-control" [(ngModel)]="nuevoTipo.nombre" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="descripcion" class="form-control" [(ngModel)]="nuevoTipo.descripcion"
+                                  rows="3"></textarea>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-end">
+                        <button class="btn btn-primary" type="submit" [disabled]="formTipo.invalid">
+                            {{ esEdicion ? 'Actualizar' : 'Guardar' }}
+                        </button>
+
+                        <button class="btn btn-secondary ms-2" type="button" (click)="cerrarModal()">
+                            Cancelar
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>

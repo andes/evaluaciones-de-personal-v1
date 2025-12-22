@@ -1,0 +1,55 @@
+<app-header></app-header>
+
+<div class="contenedor-principal">
+    <div class="container mt-3">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-5 col-md-6">
+
+                <!-- 🔹 Card principal (compacta) -->
+                <div class="card shadow-sm rounded-3">
+                    <div class="card-header text-center py-2">
+                        <h5 class="mb-0 font-weight-bold">Nueva Planilla</h5>
+                    </div>
+
+                    <div class="card-body p-3">
+                        <form (ngSubmit)="guardarPlanilla()">
+
+                            <!-- Descripción -->
+                            <div class="mb-3">
+                                <label for="descripcion" class="form-label">Descripción</label>
+                                <input id="descripcion" type="text" class="form-control"
+                                       [(ngModel)]="nuevoPlanillaED.descripcion" name="descripcion"
+                                       placeholder="Ingrese la descripción" required />
+                            </div>
+
+                            <!-- Tipo de Evaluación -->
+                            <div class="mb-3">
+                                <label for="tipoEvaluacion" class="form-label">Tipo de Evaluación</label>
+                                <select id="tipoEvaluacion" class="form-control"
+                                        [(ngModel)]="nuevoPlanillaED.tipoEvaluacion" name="tipoEvaluacion" required>
+                                    <option value="" disabled selected>Seleccione un tipo</option>
+                                    <option *ngFor="let tipo of tiposEvaluacion" [value]="tipo._id">
+                                        {{ tipo.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="d-flex justify-content-end mt-3">
+                                <button type="submit" class="btn btn-primary btn-sm px-3">
+                                    Guardar
+                                </button>
+
+                                <button type="button" class="btn btn-secondary btn-sm px-3 ms-2" (click)="volver()">
+                                    Volver
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

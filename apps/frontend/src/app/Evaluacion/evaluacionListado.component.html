@@ -1,0 +1,150 @@
+<app-header></app-header>
+
+<div class="contenedor-principal">
+    <div class="container-fluid mt-4 px-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10">
+                <div class="card shadow rounded-3">
+                    <div class="card-body">
+
+                        <!-- 🔹 Título -->
+                        <div class="text-center mb-4">
+                            <h2 class="titulo-seccion">Listado de Evaluaciones</h2>
+                        </div>
+
+                        <!-- 🔹 Filtros -->
+                        <div class="row align-items-end mb-4">
+
+                            <!-- Tipo de búsqueda -->
+                            <div class="col-md-4">
+                                <label class="form-label">Buscar por</label>
+                                <select class="form-select" [(ngModel)]="tipoFiltro" (change)="onTipoFiltroChange()">
+
+                                    <option value="">Todos</option>
+                                    <option value="agente">Agente evaluado</option>
+                                    <option value="evaluador">Evaluador</option>
+                                    <option value="estado">Estado evaluación</option>
+                                </select>
+                            </div>
+
+
+                            <!-- Valor del filtro -->
+                            <div class="col-md-6">
+                                <label class="form-label">Seleccione</label>
+
+                                <!-- Por agente -->
+                                <div *ngIf="tipoFiltro === 'agente'" class="row g-2">
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Legajo</label>
+                                        <input type="text" class="form-control" [(ngModel)]="filtroAgenteLegajo"
+                                               placeholder="Ingrese legajo">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nombre</label>
+                                        <input type="text" class="form-control" [(ngModel)]="filtroAgenteNombre"
+                                               placeholder="Ingrese nombre">
+                                    </div>
+
+                                </div>
+
+                                <!-- Por evaluador -->
+                                <div *ngIf="tipoFiltro === 'evaluador'" class="row g-2">
+
+                                    <div class="col-md-12">
+                                        <label class="form-label">Nombre evaluador</label>
+                                        <input type="text" class="form-control" [(ngModel)]="filtroEvaluadorNombre"
+                                               placeholder="Ingrese nombre del evaluador">
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Por estado -->
+                                <select *ngIf="tipoFiltro === 'estado'" class="form-select" [(ngModel)]="valorFiltro"
+                                        (change)="buscarEvaluaciones()">
+
+                                    <option value="">-- Seleccione estado --</option>
+
+                                    <option *ngFor="let tc of tiposCierre" [value]="tc._id">
+                                        {{ tc.nombre }}
+                                    </option>
+                                </select>
+
+
+
+
+                            </div>
+
+                            <!-- Botón buscar -->
+                            <div class="col-md-2 d-grid">
+                                <button class="btn btn-primary" (click)="buscarEvaluaciones()">
+                                    <i class="fas fa-search me-1"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 🔹 Grilla -->
+                        <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                            <table class="table table-striped table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Agente Evaluado</th>
+                                        <th>Evaluador</th>
+                                        <th>Período</th>
+                                        <th>Estado</th>
+                                        <th class="text-center"></th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr *ngFor="let ev of evaluaciones">
+                                        <td>
+                                            {{ ev.agenteEvaluado?.legajo }} -
+                                            {{ ev.agenteEvaluado?.nombreAgenteEvaluado }}
+                                        </td>
+                                        <td>
+                                            {{ ev.agenteEvaluador?.nombreUsuarioEvaluador }}
+                                        </td>
+                                        <td>{{ ev.periodo | date:'MM/yyyy' }}</td>
+                                        <td>
+                                            <span class="badge" [ngClass]="{
+                                                'bg-success': ev.estado === 'Evaluación Final',
+                                                'bg-warning text-dark': ev.estado === 'Evaluación Abierta'
+                                            }">
+                                                {{ ev.estado }}
+                                            </span>
+                                        </td>
+
+                                        <td class="text-center">
+                                            <a [routerLink]="['/evaluacion-agente', ev.idCabecera]"
+                                               class="btn btn-sm btn-outline-primary" title="Imprimir evaluación">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+
+                                        </td>
+                                    </tr>
+
+                                    <tr *ngIf="evaluaciones.length === 0">
+                                        <td colspan="5" class="text-center text-muted py-3">
+                                            No se encontraron evaluaciones
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 🔹 Volver -->
+                        <div class="d-flex justify-content-end mt-4">
+                            <button class="btn btn-outline-secondary" (click)="volver()">
+                                <i class="fas fa-door-open me-1"></i> Volver
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

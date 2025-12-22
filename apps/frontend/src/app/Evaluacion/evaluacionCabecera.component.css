@@ -1,0 +1,93 @@
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.agente-label {
+    font-size: 1.4rem;
+    /* MÁS grande */
+    font-weight: 700;
+    /* Negrita fuerte */
+    color: #1f1f1f;
+    /* Más oscuro aún */
+    display: block;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    /* opcional: da más presencia */
+    letter-spacing: 0.5px;
+    /* más profesional */
+}
+
+.modal {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-body {
+    max-height: 400px;
+    /* Altura máxima deseada */
+    overflow-y: auto;
+    /* Habilita scroll vertical interno */
+}
+
+.scrollable-table {
+    max-height: 400px;
+    /* o el alto que se ajuste a 10 filas aprox. */
+    overflow-y: auto;
+}
+
+.modal-backdrop-custom {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+}
+
+.custom-modal {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 600px;
+    max-width: 95%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.custom-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 15px;
+}
+
+.custom-modal-body {
+    padding: 10px 0;
+}
+
+.custom-modal-footer {
+    margin-top: 20px;
+}
+
+.close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+}

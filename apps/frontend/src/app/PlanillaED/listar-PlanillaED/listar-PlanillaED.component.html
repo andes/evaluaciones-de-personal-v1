@@ -1,0 +1,73 @@
+<app-header></app-header>
+
+<div class="contenedor-principal">
+    <div class="container-fluid mt-4 px-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="card shadow rounded-3">
+                    <div class="card-body">
+
+                        <!-- 🔹 Título -->
+                        <div class="text-center mb-4">
+                            <h2 class="titulo-seccion">Listado de Planillas</h2>
+                        </div>
+
+                        <!-- 🔹 Botones -->
+                        <div class="d-flex justify-content-end mb-3">
+                            <button class="btn btn-outline-secondary me-2" (click)="volver()" title="Volver">
+                                <i class="fas fa-door-open"></i>
+                            </button>
+
+                            <button class="btn btn-success" (click)="crearplanillaED()" title="Nueva Planilla">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+
+                        <!-- 🔹 Tabla -->
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-center">Fecha</th>
+                                        <th>Descripción</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr *ngFor="let p of filterPlanillaED">
+                                        <td class="text-center">{{ p.fechaCreacion | date: 'dd/MM/yyyy' }}</td>
+                                        <td>{{ p.descripcion }}</td>
+
+                                        <td class="text-center">
+                                            <button class="btn btn-primary btn-sm me-2" (click)="editarPlanillaED(p)"
+                                                    title="Editar">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+
+                                            <button class="btn btn-danger btn-sm me-2" (click)="eliminarPlanilla(p._id)"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+
+                                            <button class="btn btn-success btn-sm" (click)="ListarrPlanillaED(p._id)"
+                                                    title="PDF">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 🔹 Mensaje sin datos -->
+                        <h5 class="text-center mt-3" *ngIf="filterPlanillaED.length === 0">
+                            No hay planillas para mostrar
+                        </h5>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

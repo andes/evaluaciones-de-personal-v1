@@ -1,0 +1,9 @@
+{
+    "_id": {
+        "$oid": "6808e6ad3166cd20e26caa43"
+    },
+    "legajo": "123456",
+    "dni": "12345678",
+    "nombre": "apellido, nombre",
+    "__v": 0
+}

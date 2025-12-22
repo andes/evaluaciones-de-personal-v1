@@ -1,0 +1,104 @@
+<app-header></app-header>
+
+<div class="contenedor-principal">
+    <div class="container-fluid mt-4 px-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="card shadow rounded-3">
+                    <div class="card-body">
+
+                        <!-- Título -->
+                        <div class="text-center mb-4">
+                            <h2 class="titulo-seccion">Parámetros / Ítems</h2>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-end mb-3">
+                            <button class="btn btn-outline-secondary me-2" (click)="volver()" title="Volver">
+                                <i class="fas fa-door-open"></i>
+                            </button>
+
+                            <button class="btn btn-success" (click)="abrirModalNuevo()" title="Nuevo Ítem">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+
+                        <!-- Tabla -->
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Descripción</th>
+                                        <th>Valor</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let item of items">
+                                        <td>{{ item.descripcion }}</td>
+                                        <td>{{ item.valor }}</td>
+                                        <td class="text-center">
+                                            <button class="btn btn-primary btn-sm me-2" (click)="abrirModalEditar(item)"
+                                                    title="Editar">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+
+                                            <button class="btn btn-danger btn-sm" (click)="eliminarItem(item._id)"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Modal único -->
+                        <div *ngIf="mostrarModal" class="modal-overlay">
+                            <div class="modal-custom animate__animated animate__fadeInDown">
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        {{ editando ? 'Editar Ítem' : 'Nuevo Ítem' }}
+                                    </h5>
+                                    <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    <form #formItem="ngForm" (ngSubmit)="guardarItem()">
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Descripción</label>
+                                            <input type="text" class="form-control" [(ngModel)]="itemActual.descripcion"
+                                                   name="descripcion" required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Valor</label>
+                                            <input type="number" class="form-control" [(ngModel)]="itemActual.valor"
+                                                   name="valor" required>
+                                        </div>
+
+                                        <div class="modal-footer d-flex justify-content-end">
+                                            <button class="btn btn-primary" type="submit" [disabled]="formItem.invalid">
+                                                {{ editando ? 'Actualizar' : 'Guardar' }}
+                                            </button>
+
+                                            <button class="btn btn-secondary ms-2" type="button"
+                                                    (click)="cerrarModal()">
+                                                Cancelar
+                                            </button>
+                                        </div>
+
+                                    </form>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
