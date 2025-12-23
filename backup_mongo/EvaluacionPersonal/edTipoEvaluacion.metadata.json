@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"12d7b942b0504a6293cac4eda59043df","collectionName":"edTipoEvaluacion","type":"collection"}
