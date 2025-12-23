@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"9f6fa2a04c3a47eda62b347616ba7bc7","collectionName":"TipoCierreEvaluacion","type":"collection"}

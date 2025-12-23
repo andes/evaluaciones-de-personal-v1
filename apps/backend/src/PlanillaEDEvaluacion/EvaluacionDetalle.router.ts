@@ -238,7 +238,7 @@ router.post('/', async (req: Request, res: Response) => {
             idPlanillaEvaluacionCabecera,
             agenteEvaluado,
             tipoCierreEvaluacion: {
-                idTipoCierreEvaluacion: '688240f09cca123543c84b04',
+                idTipoCierreEvaluacion: '691b1629fac1f621db17efa5',
                 nombreTipoCierreEvaluacion: 'Evaluación Abierta',
                 detalle: 'Evaluación Abierta',
                 fechaCierre: new Date(),

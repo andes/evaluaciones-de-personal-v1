@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"89cbe90d5e2947a7a61302f2365eb50d","collectionName":"planilla_evaluacion_cabecera","type":"collection"}

@@ -79,9 +79,10 @@ export class PlanillaEDListadosService {
     }
     getEvaluacionesPorTipoCierre(idTipoCierre: string): Observable<any> {
         return this.http.get<any>(
-            `${this.apiUrl}/por-tipo-cierre/${idTipoCierre}`
+            `${this.apiUrl}/evaluaciones/por-tipo-cierre/${idTipoCierre}`
         );
     }
+
 
 
 }
