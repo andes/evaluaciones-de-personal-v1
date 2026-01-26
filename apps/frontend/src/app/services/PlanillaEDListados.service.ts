@@ -37,7 +37,7 @@ export class PlanillaEDListadosService {
 
     obtenerEvaluacionCompleta(idCabecera: string): Observable<EvaluacionCompleta> {
         return this.http.get<EvaluacionCompleta>(
-            `${this.apiUrl}/evaluaciondetalle/evaluacion-completa/${idCabecera}`
+            `${this.apiUrl}/evaluaciones/evaluacion-completa/${idCabecera}`
         );
     }
     // buscar por agente

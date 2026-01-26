@@ -15,6 +15,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AgentesService } from '../services/agentes.service';
 import { PlanillaEDCabeceraService } from '../services/PlanillaEDCabecera.service';
 import { PlanillaEDDetalleService } from '../services/PlanillaEDDetalle.service';
+import { PlanillaEDListadosService } from '../services/PlanillaEDListados.service';
+
+imports: [CommonModule, FormsModule]
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -81,6 +84,8 @@ export class EvaluacionAgenteComponent implements OnInit {
         private tipoCierreService: TipoCierreEvaluacionService,
         private resultadosService: EvaluacionResultadosService,
         private evaluacionService: EvaluacionService,
+        private planillaEDListadosService: PlanillaEDListadosService,
+
     ) { }
 
     // ============================================================
@@ -97,9 +102,7 @@ export class EvaluacionAgenteComponent implements OnInit {
 
                 // 🔹 Cargar totales solo si tenemos idCabecera
                 //    Podés usar un idAgente real o un valor de ejemplo
-                this.cargarTotales(this.idCabecera, 'idAgenteEjemplo')
 
-                    .catch(err => console.error('Error cargando totales:', err));
             } else {
                 console.warn('No se recibió idCabecera en la ruta.');
             }
@@ -363,7 +366,7 @@ export class EvaluacionAgenteComponent implements OnInit {
             const promedio = this.promedioPuntaje;
 
             // 🔹 Obtenemos la evaluación completa
-            this.evaluacionService.obtenerEvaluacionCompleta(idCabecera).subscribe(
+            this.planillaEDListadosService.obtenerEvaluacionCompleta(idCabecera).subscribe(
                 (resp) => {
                     if (!resp || !resp.detalles) {
                         Swal.fire('Error', 'No se encontraron detalles para la evaluación', 'error');
