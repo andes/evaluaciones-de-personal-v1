@@ -2,13 +2,14 @@ import { Router, Request, Response } from 'express';
 import * as mongoose from 'mongoose';
 import { PlanillaEvaluacionCabeceraModel } from '../PlanillaEDEvaluacion/EvaluacionCabecera.schema';
 import { EvaluacionDetalleModel } from './EvaluacionDetalle.schema';
+import { verifyToken } from '../auth/auth.middleware'
 
 const router = Router();
 
 
 
 // grilla resumen
-router.get('/evaluaciones-resumen', async (_req: Request, res: Response) => {
+router.get('/evaluaciones-resumen', verifyToken, async (_req: Request, res: Response) => {
     try {
         const data = await EvaluacionDetalleModel.aggregate([
             {
@@ -44,7 +45,7 @@ router.get('/evaluaciones-resumen', async (_req: Request, res: Response) => {
 });
 
 // todas las evaluaciones
-router.get('/evaluacioneslisttodas', async (_req: Request, res: Response) => {
+router.get('/evaluacioneslisttodas', verifyToken, async (_req: Request, res: Response) => {
     try {
         const data = await EvaluacionDetalleModel.aggregate([
             {
@@ -79,7 +80,7 @@ router.get('/evaluacioneslisttodas', async (_req: Request, res: Response) => {
 
 
 
-router.get('/buscar-agente', async (req: Request, res: Response) => {
+router.get('/buscar-agente', verifyToken, async (req: Request, res: Response) => {
     try {
         const { legajo, nombre } = req.query;
         const match: any = {};
@@ -121,7 +122,7 @@ router.get('/buscar-agente', async (req: Request, res: Response) => {
     }
 });
 
-router.get('/buscar-evaluador', async (req: Request, res: Response) => {
+router.get('/buscar-evaluador', verifyToken, async (req: Request, res: Response) => {
     try {
         const { idUsuario, nombre } = req.query;
         const match: any = {};
@@ -168,7 +169,7 @@ router.get('/buscar-evaluador', async (req: Request, res: Response) => {
 
 
 // por agente
-router.get('/evaluaciones/por-agente/:idAgente', async (req, res) => {
+router.get('/evaluaciones/por-agente/:idAgente', verifyToken, async (req, res) => {
     const { idAgente } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(idAgente)) {
@@ -196,7 +197,7 @@ router.get('/evaluaciones/por-agente/:idAgente', async (req, res) => {
 });
 
 // por tipo de cierre
-router.get('/por-tipo-cierre/:idTipoCierre', async (req, res) => {
+router.get('/por-tipo-cierre/:idTipoCierre', verifyToken, async (req, res) => {
     const { idTipoCierre } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(idTipoCierre)) {
@@ -212,7 +213,7 @@ router.get('/por-tipo-cierre/:idTipoCierre', async (req, res) => {
 });
 
 // evaluación completa
-router.get('/evaluacion-completa/:idCabecera', async (req, res) => {
+router.get('/evaluacion-completa/:idCabecera', verifyToken, async (req, res) => {
     const { idCabecera } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(idCabecera)) {

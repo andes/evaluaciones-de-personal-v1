@@ -1,103 +1,89 @@
 import { Router } from 'express';
 import { CategoriaItemModel as modelo } from './categoria.schema';
+import { verifyToken } from '../../auth/auth.middleware';
+import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
 
 const router = Router();
 
-/**
- * GET /rmCategoriaItems
- * Devuelve todas las categorías ordenadas por descripción (asc).
- */
-router.get('/rmCategoriaItems', async (req, res, next) => {
+router.get('/rmCategoriaItems', verifyToken, async (req, res) => {
     try {
-        const data = await modelo.find().sort({ descripcion: 1 }); // 1 para orden ascendente
-        res.json(data);
+        const data = await modelo.find().sort({ descripcion: 1 });
+        return successResponse(res, data, 'Categorías obtenidas correctamente');
     } catch (error) {
-        next(error);
+        return errorResponse(res, 'Error al obtener categorías', 500, error);
     }
 });
 
-/**
- * GET /rmCategoriaItems/:id
- * Devuelve la categoría cuyo _id coincida con el parámetro.
- */
-router.get('/rmCategoriaItems/:id', async (req, res) => {
+router.get('/rmCategoriaItems/:id', verifyToken, async (req, res) => {
     try {
         const doc = await modelo.findById(req.params.id);
+
         if (!doc) {
-            return res.status(404).json({ error: 'Documento no encontrado' });
+            return errorResponse(res, 'Documento no encontrado', 404);
         }
-        res.json(doc);
+
+        return successResponse(res, doc, 'Categoría obtenida correctamente');
     } catch (error) {
-        res.status(500).json({ error: 'Ha ocurrido un error' });
+        return errorResponse(res, 'Ha ocurrido un error', 500, error);
     }
 });
 
-/**
- * GET /rmCategoriaItems/verificar-descripcion/:descripcion
- * Devuelve true si no existe ninguna categoría con esa descripción.
- */
-router.get('/rmCategoriaItems/verificar-descripcion/:descripcion', async (req, res) => {
+router.get('/rmCategoriaItems/verificar-descripcion/:descripcion', verifyToken, async (req, res) => {
     try {
-        const desc = req.params.descripcion;
-        const existe = await modelo.findOne({ descripcion: desc });
-        res.json(!existe);
+        const existe = await modelo.findOne({ descripcion: req.params.descripcion });
+
+        return successResponse(
+            res,
+            !existe,
+            existe ? 'La descripción ya existe' : 'Descripción disponible'
+        );
     } catch (error) {
-        res.status(500).json({ error: 'Ha ocurrido un error' });
+        return errorResponse(res, 'Ha ocurrido un error', 500, error);
     }
 });
 
-/**
- * POST /rCategoriaItems
- * Crea una o varias categorías según el body.
- */
 router.post('/rCategoriaItems', async (req, res) => {
     try {
         if (Array.isArray(req.body)) {
             const newItems = await modelo.insertMany(req.body);
-            return res.json(newItems);
+            return successResponse(res, newItems, 'Categorías creadas correctamente', 201);
         }
+
         const newItem = await modelo.create(req.body);
-        res.json(newItem);
+        return successResponse(res, newItem, 'Categoría creada correctamente', 201);
     } catch (error) {
-        res.status(500).json({ error: 'Ha ocurrido un error' });
+        return errorResponse(res, 'Ha ocurrido un error', 500, error);
     }
 });
 
-/**
- * PUT /rCategoriaItems/:id
- * Actualiza una categoría; valida que la nueva descripción sea única.
- */
-router.put('/rCategoriaItems/:id', async (req, res) => {
+router.put('/rCategoriaItems/:id', verifyToken, async (req, res) => {
     try {
-        const nuevaDesc = req.body.descripcion;
-        const yaExiste = await modelo.findOne({ descripcion: nuevaDesc, _id: { $ne: req.params.id } });
+        const yaExiste = await modelo.findOne({
+            descripcion: req.body.descripcion,
+            _id: { $ne: req.params.id }
+        });
+
         if (yaExiste) {
-            return res.status(400).json({ error: 'La descripción ya se encuentra registrada en otro documento.' });
+            return errorResponse(
+                res,
+                'La descripción ya se encuentra registrada en otro documento',
+                400
+            );
         }
 
-        const updated = await modelo.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updated = await modelo.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
+
         if (!updated) {
-            return res.status(404).json({ error: 'No se encontró la categoría para actualizar.' });
+            return errorResponse(res, 'No se encontró la categoría', 404);
         }
-        res.json(updated);
-    } catch (error) {
-        res.status(500).json({ error: 'Ha ocurrido un error' });
-    }
-});
 
-/**
- * DELETE /rCategoriaItems/:id
- * Elimina la categoría cuyo _id coincida con el parámetro.
- */
-router.delete('/rCategoriaItems/:id', async (req, res) => {
-    try {
-        const deleted = await modelo.findByIdAndDelete(req.params.id);
-        if (!deleted) {
-            return res.status(404).json({ error: 'Documento no encontrado' });
-        }
-        res.json({ message: 'Documento eliminado correctamente' });
+        return successResponse(res, updated, 'Actualizado correctamente');
     } catch (error) {
-        res.status(500).json({ error: 'Ha ocurrido un error' });
+        return errorResponse(res, 'Ha ocurrido un error', 500, error);
     }
 });
 

@@ -1,41 +1,45 @@
 import { Router } from 'express';
 import { EfectorModel } from '../schemas/efectores';
+import { verifyToken } from '../../../auth/auth.middleware';
+import { successResponse, errorResponse } from '../../../Utilidades/apiResponse';
 
 const router = Router();
 
-// GET LISTADO
-router.get('/rmEfectores', async (req, res, next) => {
+router.get('/rmEfectores', verifyToken, async (req, res) => {
     try {
         const data = await EfectorModel.find().sort({ descripcion: 1 });
-        res.json(data);
+        return successResponse(res, data, 'Efectores obtenidos correctamente');
     } catch (error) {
-        console.error('Error al obtener los Efectores:', error);
-        res.status(500).json({ error: 'Error al obtener los efectores' });
+        return errorResponse(res, 'Error al obtener los efectores', 500, error);
     }
 });
 
-// GET POR ID
-router.get('/rmEfectores/:id', async (req, res) => {
-    const id = req.params.id;
-    const respuesta = await EfectorModel.findById(id);
-    res.json(respuesta);
+router.get('/rmEfectores/:id', verifyToken, async (req, res) => {
+    try {
+        const respuesta = await EfectorModel.findById(req.params.id);
+
+        if (!respuesta) {
+            return errorResponse(res, 'Efector no encontrado', 404);
+        }
+
+        return successResponse(res, respuesta, 'Efector obtenido correctamente');
+    } catch (error) {
+        return errorResponse(res, 'Error al buscar el efector', 500, error);
+    }
 });
 
-// 🔹 POST CREAR
-router.post('/rmEfectores', async (req, res) => {
+router.post('/rmEfectores', verifyToken, async (req, res) => {
     try {
         const { nombre } = req.body;
 
         const nuevoEfector = new EfectorModel({ nombre });
-
         const resultado = await nuevoEfector.save();
-        res.status(201).json(resultado);
+
+        return successResponse(res, resultado, 'Efector creado correctamente', 201);
 
     } catch (error) {
-        console.error('Error al crear efector:', error);
-        res.status(400).json({ error: 'Error al crear el efector' });
+        return errorResponse(res, 'Error al crear el efector', 400, error);
     }
 });
-
 
 export default router;
