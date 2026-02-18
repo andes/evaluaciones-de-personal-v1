@@ -150,7 +150,7 @@ router.get('/evaluacionItems/sumaPromediaPuntajes/:idPlanillaEvaluacionCabecera/
         return successResponse(res, data);
 
     } catch {
-        return errorResponse(res, 'Error Suma y promedio, 500);
+        return errorResponse(res, 'Error Suma y promedio', 500);
     }
 });
 
