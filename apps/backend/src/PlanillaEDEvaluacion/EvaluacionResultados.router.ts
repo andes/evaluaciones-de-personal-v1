@@ -1,33 +1,34 @@
 import { Router, Request, Response } from 'express';
 import { EvaluacionDetalleModel } from './EvaluacionDetalle.schema';
 import * as mongoose from 'mongoose';
+import { verifyToken } from '../auth/auth.middleware';
+import { successResponse, errorResponse } from '../Utilidades/apiResponse';
 
 const router = Router();
 
-//  Filtrar por cabecera y agente
+// Validar IDs
 function validarIds(idCabecera: string, idAgente: string, res: Response) {
     if (!mongoose.Types.ObjectId.isValid(idCabecera) || !mongoose.Types.ObjectId.isValid(idAgente)) {
-        res.status(400).json({ success: false, message: 'ID inválido' });
+        errorResponse(res, 'ID inválido', 400);
         return false;
     }
     return true;
 }
 
-// Cantidad de items por idCabecera e idAgente
-router.get('/agentes-evaluados', async (req: Request, res: Response) => {
+//  Agentes evaluados con filtros
+router.get('/agentes-evaluados', verifyToken, async (req: Request, res: Response) => {
     try {
         const {
             idAgenteEvaluado,
             idAgenteEvaluador,
             fechaDesde,
             fechaHasta,
-            estado // abierta | cerrada
+            estado
         } = req.query;
 
         const matchDetalle: any = {};
         const matchCabecera: any = {};
 
-        // 🔎 Filtros dinámicos
         if (idAgenteEvaluado && mongoose.Types.ObjectId.isValid(idAgenteEvaluado as string)) {
             matchDetalle["agenteEvaluado.idAgenteEvaluado"] =
                 new mongoose.Types.ObjectId(idAgenteEvaluado as string);
@@ -44,17 +45,11 @@ router.get('/agentes-evaluados', async (req: Request, res: Response) => {
             if (fechaHasta) matchCabecera.periodo.$lte = new Date(fechaHasta as string);
         }
 
-        if (estado === 'cerrada') {
-            matchCabecera.fechaCierre = { $ne: null };
-        }
-
-        if (estado === 'abierta') {
-            matchCabecera.fechaCierre = { $eq: null };
-        }
+        if (estado === 'cerrada') matchCabecera.fechaCierre = { $ne: null };
+        if (estado === 'abierta') matchCabecera.fechaCierre = { $eq: null };
 
         const resultado = await EvaluacionDetalleModel.aggregate([
             { $match: matchDetalle },
-
             {
                 $lookup: {
                     from: 'planilla_evaluacion_cabecera',
@@ -65,7 +60,6 @@ router.get('/agentes-evaluados', async (req: Request, res: Response) => {
             },
             { $unwind: '$cabecera' },
             { $match: matchCabecera },
-
             {
                 $project: {
                     _id: 0,
@@ -77,28 +71,23 @@ router.get('/agentes-evaluados', async (req: Request, res: Response) => {
                     tipoCierreEvaluacion: 1
                 }
             },
-
             { $sort: { "agenteEvaluado.nombreAgenteEvaluado": 1 } }
         ]);
 
-        return res.status(200).json({
-            success: true,
+        return successResponse(res, {
             total: resultado.length,
             data: resultado
         });
 
-    } catch (error) {
-        console.error('Error agentes-evaluados:', error);
-        return res.status(500).json({ success: false, message: 'Error interno' });
+    } catch {
+        return errorResponse(res, 'Error Agentes evaluados con filtros', 500);
     }
 });
 
-
-// Cantidad de items con valor > 0
-router.get('/evaluacionItems/contar-items-valor/:idPlanillaEvaluacionCabecera/:idAgente', async (req: Request, res: Response) => {
+//  Contar items con valor > 0
+router.get('/evaluacionItems/contar-items-valor/:idPlanillaEvaluacionCabecera/:idAgente', verifyToken, async (req, res) => {
     try {
         const { idPlanillaEvaluacionCabecera, idAgente } = req.params;
-
         if (!validarIds(idPlanillaEvaluacionCabecera, idAgente, res)) return;
 
         const resultado = await EvaluacionDetalleModel.aggregate([
@@ -114,20 +103,19 @@ router.get('/evaluacionItems/contar-items-valor/:idPlanillaEvaluacionCabecera/:i
             { $count: "totalItemsConValor" }
         ]);
 
-        const totalItems = resultado.length > 0 ? resultado[0].totalItemsConValor : 0;
-        return res.status(200).json({ success: true, totalItems });
+        const totalItems = resultado[0]?.totalItemsConValor ?? 0;
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, message: 'Error interno', error });
+        return successResponse(res, { totalItems });
+
+    } catch {
+        return errorResponse(res, 'Error Contar items con valor > 0', 500);
     }
 });
 
-// Suma y promedio de puntajes
-router.get('/evaluacionItems/sumaPromediaPuntajes/:idPlanillaEvaluacionCabecera/:idAgente', async (req: Request, res: Response) => {
+//  Suma y promedio
+router.get('/evaluacionItems/sumaPromediaPuntajes/:idPlanillaEvaluacionCabecera/:idAgente', verifyToken, async (req, res) => {
     try {
         const { idPlanillaEvaluacionCabecera, idAgente } = req.params;
-
         if (!validarIds(idPlanillaEvaluacionCabecera, idAgente, res)) return;
 
         const resultado = await EvaluacionDetalleModel.aggregate([
@@ -140,32 +128,36 @@ router.get('/evaluacionItems/sumaPromediaPuntajes/:idPlanillaEvaluacionCabecera/
             { $unwind: "$categorias" },
             { $unwind: "$categorias.items" },
             { $match: { "categorias.items.puntaje": { $gt: 0 } } },
-            { $group: { _id: null, sumaPuntajes: { $sum: "$categorias.items.puntaje" }, cantidad: { $sum: 1 } } },
-            { $project: { _id: 0, sumaPuntajes: 1, cantidad: 1, promedio: { $divide: ["$sumaPuntajes", "$cantidad"] } } }
+            {
+                $group: {
+                    _id: null,
+                    sumaPuntajes: { $sum: "$categorias.items.puntaje" },
+                    cantidad: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    sumaPuntajes: 1,
+                    cantidad: 1,
+                    promedio: { $divide: ["$sumaPuntajes", "$cantidad"] }
+                }
+            }
         ]);
 
-        if (resultado.length === 0) {
-            return res.status(200).json({ success: true, sumaPuntajes: 0, cantidad: 0, promedio: 0 });
-        }
+        const data = resultado[0] ?? { sumaPuntajes: 0, cantidad: 0, promedio: 0 };
 
-        return res.status(200).json({
-            success: true,
-            sumaPuntajes: resultado[0].sumaPuntajes,
-            cantidad: resultado[0].cantidad,
-            promedio: resultado[0].promedio
-        });
+        return successResponse(res, data);
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, message: 'Error interno', error });
+    } catch {
+        return errorResponse(res, 'Error Suma y promedio', 500);
     }
 });
 
-// Totales simples (items y suma de puntajes)
-router.get('/evaluacionItems/totales/:idPlanillaEvaluacionCabecera/:idAgente', async (req: Request, res: Response) => {
+// Totales simples
+router.get('/evaluacionItems/totales/:idPlanillaEvaluacionCabecera/:idAgente', verifyToken, async (req, res) => {
     try {
         const { idPlanillaEvaluacionCabecera, idAgente } = req.params;
-
         if (!validarIds(idPlanillaEvaluacionCabecera, idAgente, res)) return;
 
         const resultado = await EvaluacionDetalleModel.aggregate([
@@ -177,16 +169,22 @@ router.get('/evaluacionItems/totales/:idPlanillaEvaluacionCabecera/:idAgente', a
             },
             { $unwind: "$categorias" },
             { $unwind: "$categorias.items" },
-            { $group: { _id: null, totalItems: { $sum: 1 }, totalPuntaje: { $sum: "$categorias.items.puntaje" } } },
+            {
+                $group: {
+                    _id: null,
+                    totalItems: { $sum: 1 },
+                    totalPuntaje: { $sum: "$categorias.items.puntaje" }
+                }
+            },
             { $project: { _id: 0, totalItems: 1, totalPuntaje: 1 } }
         ]);
 
-        const totales = resultado.length > 0 ? resultado[0] : { totalItems: 0, totalPuntaje: 0 };
-        return res.status(200).json({ success: true, ...totales });
+        const totales = resultado[0] ?? { totalItems: 0, totalPuntaje: 0 };
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, message: 'Error interno', error });
+        return successResponse(res, totales);
+
+    } catch {
+        return errorResponse(res, 'Error Totales simples', 500);
     }
 });
 

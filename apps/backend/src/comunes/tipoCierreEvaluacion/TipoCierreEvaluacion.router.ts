@@ -1,61 +1,71 @@
 import { Router } from 'express';
 import { TipoCierreEvaluacionModel } from './TipoCierreEvaluacion.schema';
+import { verifyToken } from '../../auth/auth.middleware';
+import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
 
 const router = Router();
 
-// GET: obtener todos los documentos
-router.get('/', async (req, res) => {
+router.get('/', verifyToken, async (req, res) => {
     try {
         const data = await TipoCierreEvaluacionModel.find().sort({ nombre: 1 });
-        res.json(data);
+        return successResponse(res, data, 'Datos obtenidos correctamente');
     } catch (error) {
-        console.error('Error al obtener los datos:', error);
-        res.status(500).json({ error: 'Error al obtener los datos' });
+        return errorResponse(res, 'Error al obtener los datos', 500, error);
     }
 });
 
-// GET: obtener un documento por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', verifyToken, async (req, res) => {
     try {
-        const { id } = req.params;
-        const data = await TipoCierreEvaluacionModel.findById(id);
+        const data = await TipoCierreEvaluacionModel.findById(req.params.id);
 
         if (!data) {
-            return res.status(404).json({ error: 'No se encontró el documento' });
+            return errorResponse(res, 'No se encontró el documento', 404);
         }
 
-        res.json(data);
+        return successResponse(res, data, 'Documento obtenido correctamente');
     } catch (error) {
-        console.error('Error al obtener el documento:', error);
-        res.status(500).json({ error: 'Error al obtener el documento' });
+        return errorResponse(res, 'Error al obtener el documento', 500, error);
     }
 });
 
-// POST: crear nuevo documento
-router.post('/', async (req, res) => {
+router.post('/', verifyToken, async (req, res) => {
     try {
         const nuevo = await TipoCierreEvaluacionModel.create(req.body);
-        res.status(201).json(nuevo);
+
+        return successResponse(
+            res,
+            nuevo,
+            'Documento creado correctamente',
+            201
+        );
     } catch (error) {
-        console.error('Error al crear:', error);
-        res.status(500).json({ error: 'Error al crear el documento' });
+        return errorResponse(res, 'Error al crear el documento', 500, error);
     }
 });
 
-// PUT: actualizar documento por ID
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyToken, async (req, res) => {
     try {
-        const { id } = req.params;
-        const actualizado = await TipoCierreEvaluacionModel.findByIdAndUpdate(id, req.body, { new: true });
+        const actualizado = await TipoCierreEvaluacionModel.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
 
         if (!actualizado) {
-            return res.status(404).json({ error: 'No se encontró el documento para actualizar' });
+            return errorResponse(
+                res,
+                'No se encontró el documento para actualizar',
+                404
+            );
         }
 
-        res.json(actualizado);
+        return successResponse(
+            res,
+            actualizado,
+            'Documento actualizado correctamente'
+        );
     } catch (error) {
-        console.error('Error al actualizar:', error);
-        res.status(500).json({ error: 'Error al actualizar el documento' });
+        return errorResponse(res, 'Error al actualizar el documento', 500, error);
     }
 });
 

@@ -37,7 +37,7 @@ export class PlanillaEDListadosService {
 
     obtenerEvaluacionCompleta(idCabecera: string): Observable<EvaluacionCompleta> {
         return this.http.get<EvaluacionCompleta>(
-            `${this.apiUrl}/evaluaciondetalle/evaluacion-completa/${idCabecera}`
+            `${this.apiUrl}/evaluaciones/evaluacion-completa/${idCabecera}`
         );
     }
     // buscar por agente
@@ -79,9 +79,10 @@ export class PlanillaEDListadosService {
     }
     getEvaluacionesPorTipoCierre(idTipoCierre: string): Observable<any> {
         return this.http.get<any>(
-            `${this.apiUrl}/por-tipo-cierre/${idTipoCierre}`
+            `${this.apiUrl}/evaluaciones/por-tipo-cierre/${idTipoCierre}`
         );
     }
+
 
 
 }

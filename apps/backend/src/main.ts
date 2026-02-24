@@ -5,8 +5,8 @@ import { connectDB } from './config/database';
 import 'dotenv/config';
 
 // 🔹 Importar rutas base
-import testRoute from './router/router.test';
-import testMongoRoute from './router/testMongo.route';
+//import testRoute from './router/router.test';
+//import testMongoRoute from './router/testMongo.route';
 import AuthRouter from './auth/auth.routes';
 import { UsersRouter } from './users/user.controller';
 
@@ -29,6 +29,7 @@ import EvaluacionItemsRouter from './PlanillaEDEvaluacion/EvaluacionItems.router
 import evaluacionlistadorouter from './PlanillaEDEvaluacion/EvaluacionListados.router';
 import { evaluacionResultadosRouter } from './PlanillaEDEvaluacion/EvaluacionResultados.router';
 
+
 // --------------------------------------------------
 // 🔹 Configuración del servidor
 const host = process.env.HOST || 'localhost';
@@ -50,8 +51,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // --------------------------------------------------
 // 🔹 Rutas base
-app.use('/api/test', testRoute);
-app.use('/api/test-mongo', testMongoRoute);
+//app.use('/api/test', testRoute);
+//app.use('/api/test-mongo', testMongoRoute);
 app.use('/api/users', UsersRouter);
 app.use('/api/auth', AuthRouter);
 

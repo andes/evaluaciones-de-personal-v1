@@ -15,6 +15,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AgentesService } from '../services/agentes.service';
 import { PlanillaEDCabeceraService } from '../services/PlanillaEDCabecera.service';
 import { PlanillaEDDetalleService } from '../services/PlanillaEDDetalle.service';
+import { PlanillaEDListadosService } from '../services/PlanillaEDListados.service';
+
+imports: [CommonModule, FormsModule]
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -81,6 +84,8 @@ export class EvaluacionAgenteComponent implements OnInit {
         private tipoCierreService: TipoCierreEvaluacionService,
         private resultadosService: EvaluacionResultadosService,
         private evaluacionService: EvaluacionService,
+        private planillaEDListadosService: PlanillaEDListadosService,
+
     ) { }
 
     // ============================================================
@@ -97,9 +102,7 @@ export class EvaluacionAgenteComponent implements OnInit {
 
                 // 🔹 Cargar totales solo si tenemos idCabecera
                 //    Podés usar un idAgente real o un valor de ejemplo
-                this.cargarTotales(this.idCabecera, 'idAgenteEjemplo')
 
-                    .catch(err => console.error('Error cargando totales:', err));
             } else {
                 console.warn('No se recibió idCabecera en la ruta.');
             }
@@ -196,9 +199,9 @@ export class EvaluacionAgenteComponent implements OnInit {
 
 
 
-    // ============================================================
+
     //                      FILTRO AGENTES
-    // ============================================================
+
     filtrarAgentes() {
         const f = this.filtroAgente.toLowerCase();
         this.agentesFiltrados = this.agentes.filter(a =>
@@ -207,9 +210,9 @@ export class EvaluacionAgenteComponent implements OnInit {
         );
     }
 
-    // ============================================================
+
     //                  AGREGAR / EVALUAR AGENTE
-    // ============================================================
+
     evaluarAgente(agente: any) {
         if (!agente) {
             Swal.fire('Atención', 'Seleccioná un agente.', 'warning');
@@ -233,17 +236,20 @@ export class EvaluacionAgenteComponent implements OnInit {
 
 
     crearEvaluacion(agente: any) {
-        if (!agente) {
-            Swal.fire('Error', 'No se seleccionó un agente', 'error');
+
+        const tipoAbierta = this.motivosCierre.find(
+            (t: any) => t.nombre === 'Evaluación Abierta'
+        );
+
+        if (!tipoAbierta) {
+            Swal.fire(
+                'Error',
+                'No se encontró el tipo de cierre "Evaluación Abierta"',
+                'error'
+            );
             return;
         }
 
-        if (!this.idCabecera) {
-            Swal.fire('Error', 'No se encontró la planilla de evaluación', 'error');
-            return;
-        }
-
-        // 🔹 Payload que se enviará al backend
         const payload = {
             idPlanillaEvaluacionCabecera: this.idCabecera,
             agenteEvaluado: {
@@ -251,23 +257,24 @@ export class EvaluacionAgenteComponent implements OnInit {
                 nombreAgenteEvaluado: agente.nombre,
                 legajo: agente.legajo || 'SIN_LEGAJO'
             },
-            categorias: [] // Puede quedar vacío si todavía no hay categorías/items
+            tipoCierreEvaluacion: {
+                idTipoCierreEvaluacion: '691b1629fac1f621db17efa5',
+                nombreTipoCierreEvaluacion: 'Evaluación Abierta'
+            },
+            categorias: []
         };
 
-
-        // 🔹 Llamada al servicio
         this.detalleService.crearEvaluacionDetalle(payload).subscribe({
-            next: (res) => {
-
+            next: () => {
                 Swal.fire('Ok', 'Agente agregado a evaluación.', 'success');
-                this.cargarAgentesYaEvaluados(); // Actualiza la grilla
+                this.cargarAgentesYaEvaluados();
             },
-            error: (err) => {
-                console.error('Error al crear evaluación:', err);
+            error: () => {
                 Swal.fire('Error', 'No se pudo crear evaluación.', 'error');
             }
         });
     }
+
 
 
 
@@ -336,9 +343,9 @@ export class EvaluacionAgenteComponent implements OnInit {
 
 
 
-    // ============================================================
+
     //                        IMPRIMIR PDF
-    // ============================================================
+
 
 
     imprimirEvaluacion(agente: any): void {
@@ -359,7 +366,7 @@ export class EvaluacionAgenteComponent implements OnInit {
             const promedio = this.promedioPuntaje;
 
             // 🔹 Obtenemos la evaluación completa
-            this.evaluacionService.obtenerEvaluacionCompleta(idCabecera).subscribe(
+            this.planillaEDListadosService.obtenerEvaluacionCompleta(idCabecera).subscribe(
                 (resp) => {
                     if (!resp || !resp.detalles) {
                         Swal.fire('Error', 'No se encontraron detalles para la evaluación', 'error');

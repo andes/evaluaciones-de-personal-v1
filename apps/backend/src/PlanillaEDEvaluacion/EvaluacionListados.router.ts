@@ -2,11 +2,14 @@ import { Router, Request, Response } from 'express';
 import * as mongoose from 'mongoose';
 import { PlanillaEvaluacionCabeceraModel } from '../PlanillaEDEvaluacion/EvaluacionCabecera.schema';
 import { EvaluacionDetalleModel } from './EvaluacionDetalle.schema';
+import { verifyToken } from '../auth/auth.middleware'
 
 const router = Router();
 
-// todas grilla listado
-router.get('/evaluaciones-resumen', async (_req: Request, res: Response) => {
+
+
+// grilla resumen
+router.get('/evaluaciones-resumen', verifyToken, async (_req: Request, res: Response) => {
     try {
         const data = await EvaluacionDetalleModel.aggregate([
             {
@@ -35,39 +38,59 @@ router.get('/evaluaciones-resumen', async (_req: Request, res: Response) => {
             }
         ]);
 
-        return res.status(200).json({
-            success: true,
-            total: data.length,
-            data
-        });
+        res.status(200).json({ success: true, total: data.length, data });
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error interno'
-        });
+        res.status(500).json({ success: false, message: 'Error interno' });
     }
 });
 
-//busqued de evaluaciones por agente legajo y nombre
-router.get('/buscar-agente', async (req: Request, res: Response) => {
+// todas las evaluaciones
+router.get('/evaluacioneslisttodas', verifyToken, async (_req: Request, res: Response) => {
+    try {
+        const data = await EvaluacionDetalleModel.aggregate([
+            {
+                $lookup: {
+                    from: 'planilla_evaluacion_cabecera',
+                    localField: 'idPlanillaEvaluacionCabecera',
+                    foreignField: '_id',
+                    as: 'cabecera'
+                }
+            },
+            { $unwind: '$cabecera' },
+            {
+                $project: {
+                    _id: 0,
+                    agenteEvaluado: 1,
+                    periodo: '$cabecera.periodo',
+                    agenteEvaluador: '$cabecera.agenteevaluador',
+                    efector: '$cabecera.Efector',
+                    servicio: '$cabecera.Servicio',
+                    tipoCierreEvaluacion: 1
+                }
+            },
+            { $sort: { 'agenteEvaluado.nombreAgenteEvaluado': 1, periodo: -1 } }
+        ]);
+
+        res.status(200).json({ success: true, total: data.length, data });
+    } catch {
+        res.status(500).json({ success: false, message: 'Error interno' });
+    }
+});
+
+
+
+
+router.get('/buscar-agente', verifyToken, async (req: Request, res: Response) => {
     try {
         const { legajo, nombre } = req.query;
-
         const match: any = {};
 
         if (legajo) {
-            match['agenteEvaluado.legajo'] = {
-                $regex: legajo,
-                $options: 'i'
-            };
+            match['agenteEvaluado.legajo'] = { $regex: legajo, $options: 'i' };
         }
 
         if (nombre) {
-            match['agenteEvaluado.nombreAgenteEvaluado'] = {
-                $regex: nombre,
-                $options: 'i'
-            };
+            match['agenteEvaluado.nombreAgenteEvaluado'] = { $regex: nombre, $options: 'i' };
         }
 
         const data = await EvaluacionDetalleModel.aggregate([
@@ -90,33 +113,18 @@ router.get('/buscar-agente', async (req: Request, res: Response) => {
                     estado: '$cabecera.tipoCierreEvaluacion.nombre'
                 }
             },
-            {
-                $sort: {
-                    'agenteEvaluado.nombreAgenteEvaluado': 1,
-                    periodo: -1
-                }
-            }
+            { $sort: { 'agenteEvaluado.nombreAgenteEvaluado': 1, periodo: -1 } }
         ]);
 
-        return res.status(200).json({
-            success: true,
-            total: data.length,
-            data
-        });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error interno'
-        });
+        res.status(200).json({ success: true, total: data.length, data });
+    } catch {
+        res.status(500).json({ success: false, message: 'Error interno' });
     }
 });
 
-router.get('/buscar-evaluador', async (req: Request, res: Response) => {
+router.get('/buscar-evaluador', verifyToken, async (req: Request, res: Response) => {
     try {
         const { idUsuario, nombre } = req.query;
-
         const match: any = {};
 
         if (idUsuario && mongoose.Types.ObjectId.isValid(idUsuario as string)) {
@@ -125,10 +133,8 @@ router.get('/buscar-evaluador', async (req: Request, res: Response) => {
         }
 
         if (nombre) {
-            match['cabecera.agenteevaluador.nombreUsuarioEvaluador'] = {
-                $regex: nombre,
-                $options: 'i'
-            };
+            match['cabecera.agenteevaluador.nombreUsuarioEvaluador'] =
+                { $regex: nombre, $options: 'i' };
         }
 
         const data = await EvaluacionDetalleModel.aggregate([
@@ -150,186 +156,83 @@ router.get('/buscar-evaluador', async (req: Request, res: Response) => {
                     agenteEvaluador: '$cabecera.agenteevaluador',
                     estado: '$cabecera.tipoCierreEvaluacion.nombre'
                 }
-            },
-            {
-                $sort: {
-                    'agenteEvaluado.nombreAgenteEvaluado': 1,
-                    periodo: -1
-                }
             }
         ]);
 
-        return res.status(200).json({
-            success: true,
-            total: data.length,
-            data
-        });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error interno'
-        });
+        res.status(200).json({ success: true, total: data.length, data });
+    } catch {
+        res.status(500).json({ success: false, message: 'Error interno' });
     }
 });
 
-// TODAS LAS EVALUACIONES
-router.get('/evaluacioneslisttodas', async (_req: Request, res: Response) => {
-    try {
-        const data = await EvaluacionDetalleModel.aggregate([
-            {
-                $lookup: {
-                    from: 'planilla_evaluacion_cabecera',
-                    localField: 'idPlanillaEvaluacionCabecera',
-                    foreignField: '_id',
-                    as: 'cabecera'
-                }
-            },
-            { $unwind: '$cabecera' },
-            {
-                $project: {
-                    _id: 0,
-                    agenteEvaluado: 1,
-                    periodo: '$cabecera.periodo',
-                    agenteEvaluador: '$cabecera.agenteevaluador',
-                    efector: '$cabecera.Efector',
-                    servicio: '$cabecera.Servicio',
-                    tipoCierreEvaluacion: 1
-                }
-            },
-            {
-                $sort: {
-                    'agenteEvaluado.nombreAgenteEvaluado': 1,
-                    periodo: -1
-                }
+
+
+
+// por agente
+router.get('/evaluaciones/por-agente/:idAgente', verifyToken, async (req, res) => {
+    const { idAgente } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(idAgente)) {
+        return res.status(400).json({ success: false, message: 'ID inválido' });
+    }
+
+    const data = await EvaluacionDetalleModel.aggregate([
+        {
+            $lookup: {
+                from: 'planilla_evaluacion_cabecera',
+                localField: 'idPlanillaEvaluacionCabecera',
+                foreignField: '_id',
+                as: 'cabecera'
             }
-        ]);
-
-        return res.status(200).json({ success: true, total: data.length, data });
-    } catch (error) {
-        return res.status(500).json({ success: false, message: 'Error interno' });
-    }
-});
-
-// POR AGENTE
-router.get('/evaluaciones/por-agente/:idAgente', async (req: Request, res: Response) => {
-    try {
-        const { idAgente } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(idAgente)) {
-            return res.status(400).json({ success: false, message: 'ID inválido' });
-        }
-
-        const data = await EvaluacionDetalleModel.aggregate([
-            {
-                $lookup: {
-                    from: 'planilla_evaluacion_cabecera',
-                    localField: 'idPlanillaEvaluacionCabecera',
-                    foreignField: '_id',
-                    as: 'cabecera'
-                }
-            },
-            { $unwind: '$cabecera' },
-            {
-                $match: {
-                    'agenteEvaluado.idAgenteEvaluado': new mongoose.Types.ObjectId(idAgente)
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    agenteEvaluado: 1,
-                    periodo: '$cabecera.periodo',
-                    agenteEvaluador: '$cabecera.agenteevaluador',
-                    efector: '$cabecera.Efector',
-                    servicio: '$cabecera.Servicio',
-                    tipoCierreEvaluacion: 1
-                }
-            },
-            {
-                $sort: {
-                    'agenteEvaluado.nombreAgenteEvaluado': 1,
-                    periodo: -1
-                }
+        },
+        { $unwind: '$cabecera' },
+        {
+            $match: {
+                'agenteEvaluado.idAgenteEvaluado': new mongoose.Types.ObjectId(idAgente)
             }
-        ]);
+        }
+    ]);
 
-        return res.status(200).json({ success: true, total: data.length, data });
-    } catch (error) {
-        return res.status(500).json({ success: false, message: 'Error interno' });
-    }
+    res.status(200).json({ success: true, total: data.length, data });
 });
 
-// pOR TIPO DE CIERRE
-router.get('/por-tipo-cierre/:idTipoCierre', async (req: Request, res: Response) => {
-    try {
-        const { idTipoCierre } = req.params;
+// por tipo de cierre
+router.get('/por-tipo-cierre/:idTipoCierre', verifyToken, async (req, res) => {
+    const { idTipoCierre } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(idTipoCierre)) {
-            return res.status(400).json({ success: false, message: 'ID inválido' });
-        }
-
-        const data = await EvaluacionDetalleModel.aggregate([
-            {
-                $match: {
-                    'tipoCierreEvaluacion.idTipoCierreEvaluacion':
-                        new mongoose.Types.ObjectId(idTipoCierre)
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    periodo: 1, // si no existe, sacalo
-                    agenteEvaluado: 1,
-                    tipoCierreEvaluacion: 1
-                }
-            },
-            { $sort: { createdAt: -1 } }
-        ]);
-
-        return res.status(200).json({
-            success: true,
-            total: data.length,
-            data
-        });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, message: 'Error interno' });
+    if (!mongoose.Types.ObjectId.isValid(idTipoCierre)) {
+        return res.status(400).json({ success: false, message: 'ID inválido' });
     }
+
+    const data = await EvaluacionDetalleModel.find({
+        'tipoCierreEvaluacion.idTipoCierreEvaluacion':
+            new mongoose.Types.ObjectId(idTipoCierre)
+    });
+
+    res.status(200).json({ success: true, total: data.length, data });
 });
 
+// evaluación completa
+router.get('/evaluacion-completa/:idCabecera', verifyToken, async (req, res) => {
+    const { idCabecera } = req.params;
 
-// EVALUACIÓN COMPLETA
-router.get('/evaluacion-completa/:idCabecera', async (req: Request, res: Response) => {
-    try {
-        const { idCabecera } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(idCabecera)) {
-            return res.status(400).json({ success: false, message: 'ID inválido' });
-        }
-
-        const cabecera = await PlanillaEvaluacionCabeceraModel.findById(idCabecera).lean();
-        if (!cabecera) {
-            return res.status(404).json({ success: false, message: 'Cabecera no encontrada' });
-        }
-
-        const detalles = await EvaluacionDetalleModel.find({
-            idPlanillaEvaluacionCabecera: new mongoose.Types.ObjectId(idCabecera)
-        })
-            .populate('categorias.idCategoria', 'descripcionCategoria')
-            .populate('categorias.items.idItem', 'descripcion')
-            .lean();
-
-        return res.status(200).json({ success: true, cabecera, detalles });
-    } catch (error) {
-        return res.status(500).json({ success: false, message: 'Error interno' });
+    if (!mongoose.Types.ObjectId.isValid(idCabecera)) {
+        return res.status(400).json({ success: false, message: 'ID inválido' });
     }
+
+    const cabecera = await PlanillaEvaluacionCabeceraModel.findById(idCabecera).lean();
+    if (!cabecera) {
+        return res.status(404).json({ success: false, message: 'Cabecera no encontrada' });
+    }
+
+    const detalles = await EvaluacionDetalleModel.find({
+        idPlanillaEvaluacionCabecera: idCabecera
+    })
+        .populate('categorias.idCategoria', 'descripcionCategoria')
+        .populate('categorias.items.idItem', 'descripcion')
+        .lean();
+
+    res.status(200).json({ success: true, cabecera, detalles });
 });
-
-
-
-// router.get('/:id', ...);
 
 export default router;

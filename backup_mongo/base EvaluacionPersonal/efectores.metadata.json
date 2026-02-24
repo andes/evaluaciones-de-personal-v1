@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"78b6f5c73a1f4fb4ab6cc29f98ace0db","collectionName":"efectores","type":"collection"}
