@@ -113,6 +113,7 @@
 
                                     <tbody>
                                         <tr *ngFor="let agente of agentesYaEvaluados">
+
                                             <!-- ID oculto -->
                                             <td class="oculto text-center">
                                                 {{ agente.idPlanillaEvaluacionCabecera || idCabecera }}
@@ -144,12 +145,14 @@
                                                 <button class="btn btn-sm"
                                                         [ngClass]="agente.cerrado ? 'btn-outline-secondary' : 'btn-outline-danger'"
                                                         (click)="abrirModalCerrar(
-                                                agente.idPlanillaEvaluacionCabecera || idCabecera,
-                                                agente.idAgenteEvaluado,
-                                                agente.nombreAgenteEvaluado
-                                              )" [disabled]="agente.cerrado">
+    agente.idPlanillaEvaluacionCabecera || idCabecera,
+    agente.idAgenteEvaluado,
+    agente.nombreAgenteEvaluado
+)" [disabled]="agente.cerrado">
+
                                                     <i
                                                        [ngClass]="agente.cerrado ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
+
                                                 </button>
                                             </td>
 

@@ -1,22 +1,31 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { ItemModel } from './items.schema';
 import { verifyToken } from '../../auth/auth.middleware';
 import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
 
 const router = Router();
 
-router.get('/rEvaDesemp', verifyToken, async (req, res) => {
+
+router.get('/rEvaDesemp', verifyToken, async (_req, res) => {
     try {
-        const data = await ItemModel.find();
+        const data = await ItemModel.find().lean();
         return successResponse(res, data, 'Ítems obtenidos correctamente');
     } catch (error) {
-        return errorResponse(res, 'Error al obtener los ítems', 500, error);
+        console.error('[ITEMS_GET_ALL_ERROR]', error);
+        return errorResponse(res, 'No se pudieron obtener los ítems', 500);
     }
 });
 
 router.get('/rEvaDesemp/:id', verifyToken, async (req, res) => {
     try {
-        const item = await ItemModel.findById(req.params.id);
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'Solicitud inválida', 400);
+        }
+
+        const item = await ItemModel.findById(id).lean();
 
         if (!item) {
             return errorResponse(res, 'Ítem no encontrado', 404);
@@ -24,45 +33,65 @@ router.get('/rEvaDesemp/:id', verifyToken, async (req, res) => {
 
         return successResponse(res, item, 'Ítem obtenido correctamente');
     } catch (error) {
-        return errorResponse(res, 'Error al obtener el ítem', 500, error);
+        console.error('[ITEMS_GET_BY_ID_ERROR]', error);
+        return errorResponse(res, 'No se pudo obtener el ítem', 500);
     }
 });
+
 
 router.post('/rEvaDesemp', verifyToken, async (req, res) => {
     try {
-        if (Array.isArray(req.body)) {
-            const items = await ItemModel.insertMany(req.body);
-            return successResponse(res, items, 'Ítems creados correctamente', 201);
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return errorResponse(res, 'Datos inválidos', 400);
         }
 
         const item = await ItemModel.create(req.body);
+
         return successResponse(res, item, 'Ítem creado correctamente', 201);
     } catch (error) {
-        return errorResponse(res, 'Error al crear el ítem', 500, error);
+        console.error('[ITEMS_CREATE_ERROR]', error);
+        return errorResponse(res, 'No se pudo crear el ítem', 500);
     }
 });
 
+
 router.put('/rEvaDesemp/:id', verifyToken, async (req, res) => {
     try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'Solicitud inválida', 400);
+        }
+
         const updated = await ItemModel.findByIdAndUpdate(
-            req.params.id,
+            id,
             req.body,
-            { new: true }
+            {
+                new: true,
+                runValidators: true
+            }
         );
 
         if (!updated) {
-            return errorResponse(res, 'Ítem no encontrado para actualizar', 404);
+            return errorResponse(res, 'Ítem no encontrado', 404);
         }
 
         return successResponse(res, updated, 'Ítem actualizado correctamente');
     } catch (error) {
-        return errorResponse(res, 'Error al actualizar el ítem', 500, error);
+        console.error('[ITEMS_UPDATE_ERROR]', error);
+        return errorResponse(res, 'No se pudo actualizar el ítem', 500);
     }
 });
 
 router.delete('/rEvaDesemp/:id', verifyToken, async (req, res) => {
     try {
-        const deleted = await ItemModel.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'Solicitud inválida', 400);
+        }
+
+        const deleted = await ItemModel.findByIdAndDelete(id);
 
         if (!deleted) {
             return errorResponse(res, 'Ítem no encontrado', 404);
@@ -70,7 +99,8 @@ router.delete('/rEvaDesemp/:id', verifyToken, async (req, res) => {
 
         return successResponse(res, null, 'Ítem eliminado correctamente');
     } catch (error) {
-        return errorResponse(res, 'Error al eliminar el ítem', 500, error);
+        console.error('[ITEMS_DELETE_ERROR]', error);
+        return errorResponse(res, 'No se pudo eliminar el ítem', 500);
     }
 });
 

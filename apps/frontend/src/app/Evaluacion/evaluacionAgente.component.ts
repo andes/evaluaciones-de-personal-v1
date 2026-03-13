@@ -1,42 +1,31 @@
-import { TipoEvaluacionService } from '../services/tipoevaluacion.service';
-import { PlanillaEDService } from '../services/PlanillaED.Service';
-import { TipoCierreEvaluacionService } from '../services/TipoCierreEvaluacionService';
-import { EvaluacionResultadosService } from '../services/evaluacionResulado.service';
-import { HeaderComponent } from '../header/header.component';
-import { EvaluacionService } from '../services/evaluacion.service';
-
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { HeaderComponent } from '../header/header.component';
+
 import { AgentesService } from '../services/agentes.service';
 import { PlanillaEDCabeceraService } from '../services/PlanillaEDCabecera.service';
 import { PlanillaEDDetalleService } from '../services/PlanillaEDDetalle.service';
 import { PlanillaEDListadosService } from '../services/PlanillaEDListados.service';
+import { TipoEvaluacionService } from '../services/tipoevaluacion.service';
+import { TipoCierreEvaluacionService } from '../services/TipoCierreEvaluacionService';
+import { EvaluacionResultadosService } from '../services/evaluacionResulado.service';
+import { EvaluacionService } from '../services/evaluacion.service';
+import { PlanillaEDService } from '../services/PlanillaED.Service';
 
-imports: [CommonModule, FormsModule]
-import { v4 as uuidv4 } from 'uuid';
-
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Swal = require('sweetalert2').default;
-import { Component, OnInit } from '@angular/core';
-
-
-
 
 @Component({
     selector: 'app-evaluacion-agente',
     standalone: true,
     templateUrl: './evaluacionAgente.component.html',
     styleUrls: ['./evaluacionAgente.component.css'],
-    imports: [
-        CommonModule,
-        FormsModule,
-        HeaderComponent                                  // <-- AGREGAR
-    ]
+    imports: [CommonModule, FormsModule, HeaderComponent]
 })
 export class EvaluacionAgenteComponent implements OnInit {
 
@@ -44,34 +33,33 @@ export class EvaluacionAgenteComponent implements OnInit {
     sumaPuntajes = 0;
     promedioPuntaje = 0;
 
-    // --- IDs desde ruta ---
-    idCabecera: string = '';
+    idCabecera = '';
 
-    // --- Cabecera ---
     cabecera: any = null;
 
-    // --- Agentes ---
     agentes: any[] = [];
     agentesFiltrados: any[] = [];
-    filtroAgente: string = '';
+    agentesYaEvaluados: any[] = [];
+
+    filtroAgente = '';
     agenteSeleccionado: any = null;
 
-    // --- Tipos de evaluación ---
     tiposEvaluacion: any[] = [];
     idTipoEvaluacion: string | null = null;
 
-    // --- Agentes evaluados ---
-    agentesYaEvaluados: any[] = [];
+    motivosCierre: any[] = [];
 
-    // --- Modal cerrar evaluación ---
-    mostrarModalCerrar: boolean = false;
-    idEvaluacionDetalle: string = '';
-    idAgenteCerrar: string = '';
-    nombreAgenteCerrar: string = '';
+    mostrarModalCerrar = false;
+
+    idEvaluacionDetalle = '';
+    idAgenteCerrar = '';
+    nombreAgenteCerrar = '';
+
     motivoSeleccionado: any = null;
     fechaCierre: any = null;
 
-    motivosCierre: any[] = [];
+    isLoadingAgentes = false;
+    tipoBusqueda = 'nombre';
 
     constructor(
         private route: ActivatedRoute,
@@ -84,34 +72,222 @@ export class EvaluacionAgenteComponent implements OnInit {
         private tipoCierreService: TipoCierreEvaluacionService,
         private resultadosService: EvaluacionResultadosService,
         private evaluacionService: EvaluacionService,
-        private planillaEDListadosService: PlanillaEDListadosService,
-
+        private planillaEDListadosService: PlanillaEDListadosService
     ) { }
 
-    // ============================================================
-    //                         ON INIT
-    // ============================================================
     ngOnInit(): void {
-        // Leer parámetros de la ruta de forma segura
-        this.route.paramMap.subscribe(paramMap => {
-            this.idCabecera = paramMap.get('id') || '';
+
+        this.route.paramMap.subscribe(params => {
+
+            this.idCabecera = params.get('id') || '';
 
             if (this.idCabecera) {
                 this.cargarCabecera();
                 this.cargarAgentesYaEvaluados();
-
-                // 🔹 Cargar totales solo si tenemos idCabecera
-                //    Podés usar un idAgente real o un valor de ejemplo
-
-            } else {
-                console.warn('No se recibió idCabecera en la ruta.');
             }
+
         });
 
-        // Cargar datos generales
         this.cargarAgentes();
         this.cargarTiposEvaluacion();
         this.cargarMotivosCierre();
+
+    }
+
+    volverACabecera() {
+        this.router.navigate(['/evaluacion-cabecera']);
+    }
+
+    cargarCabecera() {
+
+        this.cabeceraService.obtenerCabecera(this.idCabecera)
+            .subscribe({
+
+                next: (res: any) => {
+
+                    if (res?.success && res?.data) {
+                        this.cabecera = res.data;
+                    } else {
+                        Swal.fire('Error', 'No se pudo cargar la cabecera', 'error');
+                    }
+
+                },
+
+                error: () => Swal.fire('Error', 'No se pudo cargar la cabecera', 'error')
+
+            });
+
+    }
+
+    cargarAgentes() {
+
+        this.agentesService.obtenerTodosAgentes()
+            .subscribe({
+
+                next: (resp: any) => {
+
+                    const data = resp?.data ?? resp;
+
+                    this.agentes = Array.isArray(data) ? data : [];
+                    this.agentesFiltrados = [...this.agentes];
+
+                },
+
+                error: () => Swal.fire('Error', 'No se pudieron cargar los agentes', 'error')
+
+            });
+
+    }
+
+    cargarTiposEvaluacion() {
+
+        this.tipoEvalService.obtenerTipos()
+            .subscribe({
+
+                next: (resp: any) => {
+
+                    const data = resp?.data ?? resp;
+                    this.tiposEvaluacion = Array.isArray(data) ? data : [];
+
+                },
+
+                error: () => Swal.fire('Error', 'No se pudieron cargar los tipos', 'error')
+
+            });
+
+    }
+
+    cargarMotivosCierre() {
+
+        this.tipoCierreService.obtenerTodos()
+            .subscribe({
+
+                next: (resp: any) => {
+
+                    const data = resp?.data ?? resp;
+                    this.motivosCierre = Array.isArray(data) ? data : [];
+
+                },
+
+                error: () => Swal.fire('Error', 'No se pudieron cargar los motivos', 'error')
+
+            });
+
+    }
+
+    cargarAgentesYaEvaluados() {
+
+        this.detalleService.getAgentesPorCabecera(this.idCabecera)
+            .subscribe({
+
+                next: (resp: any) => {
+
+                    const data = resp?.data ?? resp;
+                    this.agentesYaEvaluados = Array.isArray(data) ? data : [];
+
+                },
+
+                error: () => {
+
+                    this.agentesYaEvaluados = [];
+                    Swal.fire('Error', 'No se pudo cargar listado de evaluados', 'error');
+
+                }
+
+            });
+
+    }
+
+    filtrarAgentes() {
+
+        const f = this.filtroAgente.toLowerCase();
+
+        this.agentesFiltrados = this.agentes.filter(a =>
+            a.nombre?.toLowerCase().includes(f) ||
+            a.legajo?.toString().includes(f)
+        );
+
+    }
+
+    evaluarAgente(agente: any) {
+
+        if (!agente) {
+            Swal.fire('Atención', 'Seleccioná un agente', 'warning');
+            return;
+        }
+
+        if (!this.idTipoEvaluacion) {
+            Swal.fire('Atención', 'Seleccioná un tipo de evaluación', 'warning');
+            return;
+        }
+
+        this.detalleService.existeEvaluacion(this.idCabecera, agente._id)
+            .subscribe({
+
+                next: (resp: any) => {
+
+                    if (resp?.existe) {
+                        Swal.fire('Atención', 'Este agente ya tiene evaluación', 'info');
+                    } else {
+                        this.crearEvaluacion(agente);
+                    }
+
+                }
+
+            });
+
+    }
+
+    crearEvaluacion(agente: any) {
+
+        const payload = {
+
+            idPlanillaEvaluacionCabecera: this.idCabecera,
+
+            agenteEvaluado: {
+                idAgenteEvaluado: agente._id,
+                nombreAgenteEvaluado: agente.nombre,
+                legajo: agente.legajo || 'SIN_LEGAJO'
+            },
+
+            tipoCierreEvaluacion: {
+                idTipoCierreEvaluacion: '691b1629fac1f621db17efa5',
+                nombreTipoCierreEvaluacion: 'Evaluación Abierta'
+            },
+
+            categorias: []
+
+        };
+
+        this.detalleService.crearEvaluacionDetalle(payload)
+            .subscribe({
+
+                next: () => {
+                    Swal.fire('OK', 'Agente agregado a evaluación', 'success');
+                    this.cargarAgentesYaEvaluados();
+                },
+
+                error: () => Swal.fire('Error', 'No se pudo crear evaluación', 'error')
+
+            });
+
+    }
+
+    verItemsEvaluacion(agente: any) {
+
+        const idCabecera = agente?.idPlanillaEvaluacionCabecera || this.idCabecera;
+        const idAgente = agente?.idAgenteEvaluado;
+
+        if (!idCabecera || !idAgente) {
+            console.error("Faltan datos para abrir evaluación:", { idCabecera, idAgente });
+            return;
+        }
+
+        console.log("Cabecera:", idCabecera);
+        console.log("Agente:", idAgente);
+
+        this.router.navigate(['/evaluacion-items', idCabecera, idAgente]);
+
     }
 
     //  Método cargarTotales dentro de la clase
@@ -133,174 +309,18 @@ export class EvaluacionAgenteComponent implements OnInit {
         });
     }
 
-    cargarCabecera() {
-
-        this.cabeceraService.obtenerCabecera(this.idCabecera).subscribe({
-            next: (res) => {
-                if (res.success && res.data) {
-                    this.cabecera = res.data;
-
-                } else {
-                    Swal.fire('Error', 'No se pudo cargar la cabecera.', 'error');
-                }
-            },
-            error: (err) => {
-
-                Swal.fire('Error', 'No se pudo cargar la cabecera.', 'error');
-            }
-        });
-    }
-
-
-
-
-
-
-
-    cargarAgentes() {
-        this.agentesService.obtenerTodosAgentes().subscribe({
-            next: (resp: any[]) => {
-                this.agentes = resp;
-                this.agentesFiltrados = [...this.agentes];
-            },
-            error: () => Swal.fire('Error', 'No se pudieron cargar los agentes.', 'error')
-        });
-    }
-
-
-    cargarTiposEvaluacion() {
-        this.tipoEvalService.obtenerTipos().subscribe({
-            next: (data) => this.tiposEvaluacion = data,
-            error: () => Swal.fire('Error', 'No se pudieron cargar los tipos.', 'error')
-        });
-    }
-
-    cargarMotivosCierre() {
-        this.tipoCierreService.obtenerTodos().subscribe({
-            next: (data) => this.motivosCierre = data,
-            error: () => Swal.fire('Error', 'No se pudieron cargar los motivos.', 'error')
-        });
-    }
-
-    cargarAgentesYaEvaluados() {
-        this.detalleService.getAgentesPorCabecera(this.idCabecera)
-            .subscribe({
-                next: (resp: any) => {
-
-                    this.agentesYaEvaluados = resp.data ?? resp;
-                },
-                error: () => {
-                    Swal.fire('Error', 'No se pudo cargar listado de evaluados.', 'error');
-                }
-            });
-    }
-
-
-
-
-
-
-    //                      FILTRO AGENTES
-
-    filtrarAgentes() {
-        const f = this.filtroAgente.toLowerCase();
-        this.agentesFiltrados = this.agentes.filter(a =>
-            a.nombre.toLowerCase().includes(f) ||
-            (a.legajo && a.legajo.toString().includes(f))
-        );
-    }
-
-
-    //                  AGREGAR / EVALUAR AGENTE
-
-    evaluarAgente(agente: any) {
-        if (!agente) {
-            Swal.fire('Atención', 'Seleccioná un agente.', 'warning');
-            return;
-        }
-        if (!this.idTipoEvaluacion) {
-            Swal.fire('Atención', 'Seleccioná un tipo de evaluación.', 'warning');
-            return;
-        }
-
-        this.detalleService.existeEvaluacion(this.idCabecera, agente._id).subscribe({
-            next: (data: any) => {
-                if (data.existe) {
-                    Swal.fire('Atención', 'Este agente ya tiene evaluación.', 'info');
-                } else {
-                    this.crearEvaluacion(agente);
-                }
-            }
-        });
-    }
-
-
-    crearEvaluacion(agente: any) {
-
-        const tipoAbierta = this.motivosCierre.find(
-            (t: any) => t.nombre === 'Evaluación Abierta'
-        );
-
-        if (!tipoAbierta) {
-            Swal.fire(
-                'Error',
-                'No se encontró el tipo de cierre "Evaluación Abierta"',
-                'error'
-            );
-            return;
-        }
-
-        const payload = {
-            idPlanillaEvaluacionCabecera: this.idCabecera,
-            agenteEvaluado: {
-                idAgenteEvaluado: agente._id,
-                nombreAgenteEvaluado: agente.nombre,
-                legajo: agente.legajo || 'SIN_LEGAJO'
-            },
-            tipoCierreEvaluacion: {
-                idTipoCierreEvaluacion: '691b1629fac1f621db17efa5',
-                nombreTipoCierreEvaluacion: 'Evaluación Abierta'
-            },
-            categorias: []
-        };
-
-        this.detalleService.crearEvaluacionDetalle(payload).subscribe({
-            next: () => {
-                Swal.fire('Ok', 'Agente agregado a evaluación.', 'success');
-                this.cargarAgentesYaEvaluados();
-            },
-            error: () => {
-                Swal.fire('Error', 'No se pudo crear evaluación.', 'error');
-            }
-        });
-    }
-
-
-
-
-
-    //                     VER DETALLE / VOLVER
-
-    verItemsEvaluacion(agente: any) {
-
-
-        this.router.navigate(['/evaluacion-items', this.idCabecera, agente.idAgenteEvaluado]);
-    }
-
-
-    volverACabecera() {
-        this.router.navigate(['/evaluacion-cabecera']);
-    }
-
-    // ============================================================
-    //                     MODAL CERRAR EVALUACIÓN
-    // ============================================================
     abrirModalCerrar(idEvaluacion: string, idAgente: string, nombre: string) {
+
+        console.log("Abrir modal cierre:", {
+            idEvaluacion,
+            idAgente,
+            nombre
+        });
+
         this.mostrarModalCerrar = true;
         this.idEvaluacionDetalle = idEvaluacion;
         this.idAgenteCerrar = idAgente;
         this.nombreAgenteCerrar = nombre;
-        this.fechaCierre = new Date().toISOString().split('T')[0];
     }
 
     cerrarModalCerrar() {
@@ -340,13 +360,6 @@ export class EvaluacionAgenteComponent implements OnInit {
             }
         });
     }
-
-
-
-
-    //                        IMPRIMIR PDF
-
-
 
     imprimirEvaluacion(agente: any): void {
         const idAgente = agente.idAgenteEvaluado;
@@ -481,6 +494,5 @@ export class EvaluacionAgenteComponent implements OnInit {
             Swal.fire('Error', 'No se pudieron cargar los totales', 'error');
         });
     }
-
 
 }

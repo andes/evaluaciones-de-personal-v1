@@ -24,9 +24,16 @@ export const errorResponse = (
     status = 500,
     error: any = null
 ) => {
-    return res.status(status).json({
+
+    const response: ApiResponse = {
         success: false,
-        message,
-        error
-    });
+        message
+    };
+
+    // Solo mostrar detalles técnicos en desarrollo
+    if (process.env.NODE_ENV !== 'production' && error) {
+        response.error = error;
+    }
+
+    return res.status(status).json(response);
 };

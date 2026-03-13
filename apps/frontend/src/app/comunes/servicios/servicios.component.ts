@@ -6,6 +6,17 @@ import { ServiciosService } from '../../services/servicios.service';
 import { HeaderComponent } from '../../header/header.component';
 import Swal from 'sweetalert2';
 
+interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    message?: string;
+}
+
+interface Servicio {
+    _id?: string;
+    descripcion: string;
+}
+
 @Component({
     selector: 'app-servicios',
     standalone: true,
@@ -15,14 +26,14 @@ import Swal from 'sweetalert2';
 })
 export class ServiciosComponent implements OnInit {
 
-    servicios: any[] = [];
+    servicios: Servicio[] = [];
     mostrarModal = false;
     esEdicion = false;
 
-    servicioSeleccionado: any = null;
+    servicioSeleccionado: Servicio | null = null;
 
-    nuevoServicio = {
-        nombre: ''
+    nuevoServicio: Servicio = {
+        descripcion: ''
     };
 
     constructor(
@@ -36,20 +47,23 @@ export class ServiciosComponent implements OnInit {
 
     cargarServicios(): void {
         this.serviciosService.getServicios().subscribe({
-            next: data => this.servicios = data,
-            error: () => Swal.fire('❌ Error', 'No se pudieron cargar los servicios', 'error')
+            next: (response: ApiResponse<Servicio[]>) => {
+                this.servicios = response.data; // 👈 CLAVE
+            },
+            error: () =>
+                Swal.fire('❌ Error', 'No se pudieron cargar los servicios', 'error')
         });
     }
 
-    abrirModal(servicio?: any): void {
+    abrirModal(servicio?: Servicio): void {
         if (servicio) {
             this.esEdicion = true;
             this.servicioSeleccionado = servicio;
-            this.nuevoServicio.nombre = servicio.nombre;
+            this.nuevoServicio = { descripcion: servicio.descripcion };
         } else {
             this.esEdicion = false;
             this.servicioSeleccionado = null;
-            this.nuevoServicio.nombre = '';
+            this.nuevoServicio = { descripcion: '' };
         }
 
         this.mostrarModal = true;
@@ -61,51 +75,51 @@ export class ServiciosComponent implements OnInit {
 
     guardarServicio(): void {
 
-        if (this.esEdicion && this.servicioSeleccionado) {
+        if (!this.nuevoServicio.descripcion.trim()) {
+            Swal.fire('⚠️ Atención', 'El nombre es obligatorio', 'warning');
+            return;
+        }
+
+        if (this.esEdicion && this.servicioSeleccionado?._id) {
+
             this.serviciosService.actualizarServicio(
                 this.servicioSeleccionado._id,
                 this.nuevoServicio
             ).subscribe({
                 next: () => {
-                    Swal.fire(' Éxito', 'Servicio actualizado', 'success');
+                    Swal.fire('✅ Éxito', 'Servicio actualizado', 'success');
                     this.cargarServicios();
                     this.cerrarModal();
                 },
-                error: () => Swal.fire('❌ Error', 'No se pudo actualizar', 'error')
+                error: () =>
+                    Swal.fire('❌ Error', 'No se pudo actualizar', 'error')
             });
 
         } else {
-            this.serviciosService.crearServicio(this.nuevoServicio).subscribe({
-                next: () => {
-                    Swal.fire(' Éxito', 'Servicio creado', 'success');
-                    this.cargarServicios();
-                    this.cerrarModal();
-                },
-                error: () => Swal.fire('❌ Error', 'No se pudo crear', 'error')
-            });
+
+            this.serviciosService.crearServicio(this.nuevoServicio)
+                .subscribe({
+                    next: (resp) => {
+                        Swal.fire('✅ Éxito', resp.message, 'success');
+                        this.cargarServicios();
+                        this.cerrarModal();
+                    },
+                    error: (err) => {
+
+                        if (err.status === 409) {
+                            Swal.fire('⚠️ Atención', err.error.message, 'warning');
+                        } else if (err.status === 400) {
+                            Swal.fire('⚠️ Atención', err.error.message, 'warning');
+                        } else {
+                            Swal.fire('❌ Error', 'Error inesperado del servidor', 'error');
+                        }
+
+                    }
+                });
         }
     }
 
-    eliminarServicio(id: string): void {
-        Swal.fire({
-            title: '¿Eliminar servicio?',
-            text: 'Esta acción no se puede deshacer',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then(res => {
-            if (res.isConfirmed) {
-                this.serviciosService.eliminarServicio(id).subscribe({
-                    next: () => {
-                        Swal.fire('🗑️ Eliminado', 'Servicio eliminado', 'success');
-                        this.cargarServicios();
-                    },
-                    error: () => Swal.fire('❌ Error', 'No se pudo eliminar', 'error')
-                });
-            }
-        });
-    }
+
 
     volver(): void {
         this.router.navigate(['/menu']);

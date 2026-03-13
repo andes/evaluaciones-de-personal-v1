@@ -31,7 +31,5 @@ export class ServiciosService {
         return this.http.put(`${this.apiUrl}/rmServicios/${id}`, servicio);
     }
 
-    eliminarServicio(id: string): Observable<any> {
-        return this.http.delete(`${this.apiUrl}/rsServicios/${id}`);
-    }
+
 }

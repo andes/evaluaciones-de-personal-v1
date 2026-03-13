@@ -130,34 +130,29 @@ export class EvaluacionListadoComponent implements OnInit {
 
     filtrarPorEstado(): void {
 
-        // 🔍 1️⃣ VER QUÉ VALOR TIENE EL FILTRO
-        console.log('👉 valorFiltro:', this.valorFiltro);
-        console.log('👉 tipo valorFiltro:', typeof this.valorFiltro);
+
 
 
         if (!this.valorFiltro) {
-            console.log('⚠️ No hay filtro, cargo grilla completa');
+            console.log('No hay filtro, cargo grilla completa');
             this.cargarGrilla();
             return;
         }
 
 
-        console.log(
-            '🚀 Llamando getEvaluacionesPorTipoCierre con:',
-            this.valorFiltro
-        );
+
 
         this.planillaEDListadosService
             .getEvaluacionesPorTipoCierre(this.valorFiltro)
             .subscribe({
                 next: resp => {
 
-                    console.log('✅ Respuesta backend:', resp);
+                    console.log('Respuesta backend:', resp);
 
                     this.evaluaciones = resp.data || [];
                 },
                 error: err => {
-                    console.error('❌ Error al filtrar por estado', err);
+                    console.error(' Error al filtrar por estado', err);
                     this.evaluaciones = [];
                 }
             });

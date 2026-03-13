@@ -56,43 +56,58 @@ export class EvaluacionItemsComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
+
         this.route.paramMap.subscribe(params => {
-            const idEval = params.get('idEvaluacion');
-            const idAg = params.get('idAgente');
 
-            if (idEval && idAg) {
-                this.idEvaluacion = idEval;
-                this.idAgente = idAg;
+            this.idEvaluacion = params.get('idEvaluacion') || '';
+            this.idAgente = params.get('idAgente') || '';
 
+            console.log("ID EVALUACION:", this.idEvaluacion);
+            console.log("ID AGENTE:", this.idAgente);
+
+            if (this.idEvaluacion && this.idAgente) {
 
                 this.obtenerAgenteEvaluado();
                 this.obtenerCabecera();
                 this.obtenerCategoriasEItems();
                 this.cargarResultadosEvaluacion();
+
             } else {
-                console.warn('No se recibieron idEvaluacion o idAgente en la ruta');
+
+                console.warn('No se recibieron parámetros en la ruta');
+
             }
+
         });
+
     }
 
     obtenerAgenteEvaluado(): void {
+
         if (!this.idAgente) return;
 
         this.agentesService.obtenerAgentePorId(this.idAgente).subscribe({
-            next: (agente) => {
+            next: (resp: any) => {
+
+                const agente = resp.data;
+
                 this.nombreAgenteEvaluado = `${agente.legajo} - ${agente.nombre}`;
+
             },
             error: (err) => {
+
                 console.error('Error al obtener agente evaluado:', err);
                 this.nombreAgenteEvaluado = 'Agente no encontrado';
+
             }
         });
+
     }
 
 
     obtenerCabecera(): void {
         if (!this.idEvaluacion) return;
-        this.cabeceraService.obtenerCabeceraG(this.idEvaluacion).subscribe({
+        this.cabeceraService.obtenerCabecera(this.idEvaluacion).subscribe({
             next: r => this.cabecera = r.data,
             error: e => console.error('Error cabecera:', e)
         });
@@ -125,7 +140,7 @@ export class EvaluacionItemsComponent implements OnInit {
         const idItemString = this.itemSeleccionado.idItem || this.itemSeleccionado._id;
 
         if (!idItemString) {
-            console.error('❌ idItem no definido:', this.itemSeleccionado);
+            console.error('idItem no definido:', this.itemSeleccionado);
             return;
         }
 
@@ -146,7 +161,7 @@ export class EvaluacionItemsComponent implements OnInit {
                 this.cerrarModalValor();
             },
             error: (err) => {
-                console.error('❌ Error al actualizar puntaje:', err);
+                console.error('Error al actualizar puntaje:', err);
                 this.cerrarModalValor();
             }
         });
@@ -156,19 +171,33 @@ export class EvaluacionItemsComponent implements OnInit {
 
 
     cargarResultadosEvaluacion(): void {
+
+        console.log("ACTUALIZANDO RESULTADOS");
+
         if (!this.idEvaluacion || !this.idAgente) return;
 
         this.resultadosService.obtenerTotales(this.idEvaluacion, this.idAgente).subscribe({
             next: resp => {
-                this.totalItems = +resp.totalItems || 0;
-                this.sumaPuntajes = +resp.totalPuntaje || 0;
+
+                console.log("RESPUESTA TOTALES:", resp);
+
+                this.totalItems = +resp.data.totalItems || 0;
+                this.sumaPuntajes = +resp.data.totalPuntaje || 0;
 
                 this.resultadosService.contarItemsConValor(this.idEvaluacion, this.idAgente).subscribe({
                     next: valResp => {
-                        this.totalItemsConValor = +valResp.totalItems || 0;
-                        this.promedioPuntajes = this.totalItemsConValor > 0
-                            ? this.sumaPuntajes / this.totalItemsConValor
-                            : 0;
+
+                        console.log("RESPUESTA ITEMS CON VALOR:", valResp);
+
+                        this.totalItemsConValor = +valResp.data.totalItems || 0;
+
+                        this.promedioPuntajes =
+                            this.totalItemsConValor > 0
+                                ? this.sumaPuntajes / this.totalItemsConValor
+                                : 0;
+
+                        console.log("PROMEDIO CALCULADO:", this.promedioPuntajes);
+
                     }
                 });
             }

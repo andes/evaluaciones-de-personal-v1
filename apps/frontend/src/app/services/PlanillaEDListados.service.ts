@@ -32,9 +32,9 @@ export class PlanillaEDListadosService {
 
 
 
+
+
     //  EVALUACIÓN COMPLETA
-
-
     obtenerEvaluacionCompleta(idCabecera: string): Observable<EvaluacionCompleta> {
         return this.http.get<EvaluacionCompleta>(
             `${this.apiUrl}/evaluaciones/evaluacion-completa/${idCabecera}`

@@ -3,26 +3,33 @@ import { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { User } from '../users/user.schema';
 import jwt from 'jsonwebtoken';
-
+import { verifyToken } from '../auth/auth.middleware';
+import { successResponse, errorResponse } from '../Utilidades/apiResponse';
 
 dotenv.config();
 
 const router = express.Router();
+const isDev = process.env.NODE_ENV === 'development';
 
-/**
- * 🔐 LOGIN
- */
+
+//LOGIN
+
 router.post('/login', async (req: Request, res: Response) => {
     const { dni, password } = req.body;
 
-
-
     try {
+
         const user = await User.findOne({ dni });
-        if (!user) return res.status(401).json({ message: 'Usuario no encontrado' });
+
+        if (!user) {
+            return errorResponse(res, 'Usuario no encontrado', 401);
+        }
 
         const isMatch = await user.comparePassword(password);
-        if (!isMatch) return res.status(401).json({ message: 'Contraseña incorrecta' });
+
+        if (!isMatch) {
+            return errorResponse(res, 'Contraseña incorrecta', 401);
+        }
 
         const payload = {
             id: user._id,
@@ -33,120 +40,195 @@ router.post('/login', async (req: Request, res: Response) => {
         };
 
         const JWT_SECRET = process.env.JWT_SECRET;
+
         if (!JWT_SECRET) {
             console.error('Faltó definir JWT_SECRET en el archivo .env');
-            return res.status(500).json({ message: 'Error interno: JWT_SECRET no configurado' });
+            return errorResponse(res, 'Error interno: JWT_SECRET no configurado', 500);
         }
 
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 
+        return successResponse(
+            res,
+            { token, user: payload },
+            'Login exitoso'
+        );
 
-        res.json({ message: 'Login exitoso', token, user: payload });
+    } catch (error) {
 
-    } catch (error: any) {
         console.error('Error en /login:', error);
-        res.status(500).json({ message: 'Error en el servidor', error: error.message });
+
+        return errorResponse(
+            res,
+            'Error en el servidor',
+            500,
+            isDev ? error : undefined
+        );
     }
 });
 
-/**
- * 🧾 REGISTRO DE NUEVO USUARIO
- */
-router.post('/register', async (req: Request, res: Response) => {
+
+
+// REGISTRO DE NUEVO USUARIO
+
+router.post('/register', verifyToken, async (req: Request, res: Response) => {
+
     try {
 
-        // 🔹 Limpia los campos vacíos ("")
         Object.keys(req.body).forEach(key => {
             if (req.body[key] === '') req.body[key] = null;
         });
 
         const { dni, password, nombre, email, rol } = req.body;
 
-        // 🔹 Validaciones básicas
         if (!dni || !password || !nombre || !email || !rol) {
-            return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+            return errorResponse(res, 'Todos los campos son obligatorios', 400);
         }
 
-        // 🔹 Verifica duplicados
-        const existingUser = await User.findOne({ $or: [{ dni }, { email }] });
+        const existingUser = await User.findOne({
+            $or: [{ dni }, { email }]
+        });
+
         if (existingUser) {
-            return res.status(400).json({ message: 'El usuario ya existe (DNI o Email duplicado)' });
+            return errorResponse(
+                res,
+                'El usuario ya existe (DNI o Email duplicado)',
+                400
+            );
         }
 
-        // 🔹 Crea el nuevo usuario
         const newUser = new User({ dni, password, nombre, email, rol });
+
         await newUser.save();
 
-        res.status(201).json({
-            message: ' Usuario creado correctamente',
-            user: {
+        return successResponse(
+            res,
+            {
                 id: newUser._id,
                 dni: newUser.dni,
                 nombre: newUser.nombre,
                 email: newUser.email,
                 rol: newUser.rol
-            }
-        });
+            },
+            'Usuario creado correctamente',
+            201
+        );
 
-    } catch (error: any) {
-        console.error(' Error en /register:', error);
-        res.status(500).json({ message: 'Error en el servidor', error: error.message });
+    } catch (error) {
+
+        console.error('Error en /register:', error);
+
+        return errorResponse(
+            res,
+            'Error en el servidor',
+            500,
+            isDev ? error : undefined
+        );
     }
 });
 
-/**
- * 📋 LISTAR TODOS LOS USUARIOS
- */
-router.get('/users', async (_req: Request, res: Response) => {
+
+
+//LISTAR USUARIOS
+
+router.get('/users', verifyToken, async (_req: Request, res: Response) => {
+
     try {
-        const users = await User.find({}, '-password');
-        res.json(users);
-    } catch (error: any) {
+
+        const users = await User.find({}, '-password').lean();
+
+        return successResponse(res, users, 'Usuarios obtenidos correctamente');
+
+    } catch (error) {
+
         console.error('Error en /users:', error);
-        res.status(500).json({ message: 'Error en el servidor', error: error.message });
+
+        return errorResponse(
+            res,
+            'Error en el servidor',
+            500,
+            isDev ? error : undefined
+        );
     }
 });
 
-/**
- * ✏️ ACTUALIZAR USUARIO
- */
-router.put('/users/:id', async (req: Request, res: Response) => {
+
+
+// ACTUALIZAR USUARIO
+
+router.put('/users/:id', verifyToken, async (req: Request, res: Response) => {
+
     try {
+
         const { id } = req.params;
         const updateData = { ...req.body };
 
-        // Si no envía password, no la actualiza
         if (!updateData.password || updateData.password.trim() === '') {
             delete updateData.password;
         }
 
-        const updatedUser = await User.findByIdAndUpdate(id, updateData, {
-            new: true,
-            runValidators: true
-        }).select('-password');
+        const updatedUser = await User.findByIdAndUpdate(
+            id,
+            updateData,
+            {
+                new: true,
+                runValidators: true
+            }
+        ).select('-password');
 
         if (!updatedUser) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
+            return errorResponse(res, 'Usuario no encontrado', 404);
         }
 
-        res.json({ message: 'Usuario actualizado correctamente', user: updatedUser });
-    } catch (error: any) {
+        return successResponse(
+            res,
+            updatedUser,
+            'Usuario actualizado correctamente'
+        );
+
+    } catch (error) {
+
         console.error('Error en PUT /users/:id:', error);
-        res.status(500).json({ message: 'Error en el servidor', error: error.message });
+
+        return errorResponse(
+            res,
+            'Error en el servidor',
+            500,
+            isDev ? error : undefined
+        );
     }
 });
 
-/**
- * 🗑️ ELIMINAR USUARIO
- */
-router.delete('/users/:id', async (req: Request, res: Response) => {
+
+
+//ELIMINAR USUARIO
+
+router.delete('/users/:id', verifyToken, async (req: Request, res: Response) => {
+
     try {
+
         const deletedUser = await User.findByIdAndDelete(req.params.id);
-        if (!deletedUser) return res.status(404).json({ message: 'Usuario no encontrado' });
-        res.json({ message: 'Usuario eliminado', user: deletedUser });
-    } catch (error: any) {
+
+        if (!deletedUser) {
+            return errorResponse(res, 'Usuario no encontrado', 404);
+        }
+
+        return successResponse(
+            res,
+            deletedUser,
+            'Usuario eliminado correctamente'
+        );
+
+    } catch (error) {
+
         console.error('Error en DELETE /users/:id:', error);
-        res.status(500).json({ message: 'Error en el servidor', error: error.message });
+
+        return errorResponse(
+            res,
+            'Error en el servidor',
+            500,
+            isDev ? error : undefined
+        );
     }
 });
 

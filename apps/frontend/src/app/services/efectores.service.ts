@@ -7,6 +7,12 @@ export interface Efector {
     nombre: string;
 }
 
+export interface ApiResponse<T> {
+    success: boolean;
+    message: string;
+    data: T;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -16,17 +22,16 @@ export class EfectoresService {
 
     constructor(private http: HttpClient) { }
 
-    // 🔹 Obtener todos los efectores
-    getEfectores(): Observable<Efector[]> {
-        return this.http.get<Efector[]>(`${this.apiUrl}/rmEfectores`);
+    getEfectores(): Observable<ApiResponse<Efector[]>> {
+        return this.http.get<ApiResponse<Efector[]>>(
+            `${this.apiUrl}/rmEfectores`
+        );
     }
 
-    // 🔹 Obtener un efector por ID
     getEfectorById(id: string): Observable<Efector> {
         return this.http.get<Efector>(`${this.apiUrl}/rmEfectores/${id}`);
     }
 
-    // 🔹 Crear un nuevo efector
     createEfector(data: Efector): Observable<Efector> {
         return this.http.post<Efector>(`${this.apiUrl}/rmEfectores`, data);
     }

@@ -69,9 +69,9 @@ export class ListarPlanillaEDComponent implements OnInit {
     }
     obtenerPlanillaED() {
         this._PlanillaEDService.getPlanillasED().subscribe(
-            (data: any[]) => {
-                this.listPlanillaED = data;
-                this.filterPlanillaED = data;
+            (resp: any) => {
+                this.listPlanillaED = resp.data;
+                this.filterPlanillaED = resp.data;
             },
             (error) => {
                 console.error('Error al obtener las planillas:', error);

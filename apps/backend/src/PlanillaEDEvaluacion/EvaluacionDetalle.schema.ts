@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 
 // Subesquema para los ítems
 const ItemSchema = new Schema({
-    idItem: { type: Schema.Types.ObjectId, required: true, ref: 'Item' },
+    idItem: { type: Schema.Types.ObjectId, required: false, ref: 'Item' },
     descripcion: { type: String, required: true },
     puntaje: { type: Number, required: true }
 });

@@ -189,13 +189,51 @@ router.post('/', verifyToken, async (req: Request, res: Response) => {
 
 router.put('/:id/categorias', verifyToken, async (req: Request, res: Response) => {
     try {
-        const planilla = await PlanillaEDModel.findById(req.params.id);
+        const { categoria, descripcionCategoria, items } = req.body;
+
+        if (!categoria || !descripcionCategoria || !items || !Array.isArray(items) || items.length === 0) {
+            return errorResponse(res, 'Datos inválidos', 400);
+        }
+
+        const planilla: any = await PlanillaEDModel.findById(req.params.id);
         if (!planilla) return errorResponse(res, 'Planilla no encontrada', 404);
 
+        const itemNuevo = items[0];
+
+        const categoriaExistente = planilla.categorias.find(
+            (c: any) => String(c.categoria) === String(categoria)
+        );
+
+        if (categoriaExistente) {
+
+            const itemDuplicado = categoriaExistente.items.find(
+                (i: any) =>
+                    i.descripcion.toLowerCase().trim() ===
+                    itemNuevo.descripcion.toLowerCase().trim()
+            );
+
+            if (itemDuplicado) {
+                return errorResponse(res, 'El ítem ya existe en esta categoría', 400);
+            }
+
+            categoriaExistente.items.push(itemNuevo);
+
+        } else {
+
+            planilla.categorias.push({
+                categoria,
+                descripcion: descripcionCategoria, // 👈 AHORA SÍ OBLIGATORIO
+                items: [itemNuevo]
+            });
+        }
+
         await planilla.save();
-        return successResponse(res, planilla, 'Planilla actualizada');
-    } catch {
-        return errorResponse(res, 'Error al actualizar', 500);
+
+        return successResponse(res, planilla, 'Planilla actualizada correctamente');
+
+    } catch (error) {
+        console.error('ERROR REAL:', error);
+        return errorResponse(res, 'Error al actualizar', 500, error);
     }
 });
 

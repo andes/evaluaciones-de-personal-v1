@@ -8,8 +8,12 @@ import { successResponse, errorResponse } from '../Utilidades/apiResponse';
 
 const router = Router();
 
-router.post('/planillaedcabecera', verifyToken, async (req: Request, res: Response) => {
+
+// CREAR CABECERA
+
+router.post('/', verifyToken, async (req: Request, res: Response) => {
     try {
+
         const { periodo, agenteevaluador, Efector, Servicio, usuario } = req.body;
 
         if (!periodo || !agenteevaluador || !Efector || !Servicio || !usuario) {
@@ -20,22 +24,30 @@ router.post('/planillaedcabecera', verifyToken, async (req: Request, res: Respon
         const servicioDB = await ServicioModel.findById(Servicio.idServicio).lean();
 
         const nuevaCabecera = new PlanillaEvaluacionCabeceraModel({
+
             periodo: new Date(periodo),
+
             agenteevaluador: {
                 idUsuarioEvaluador: agenteevaluador.idUsuarioEvaluador,
                 nombreUsuarioEvaluador: agenteevaluador.nombreUsuarioEvaluador
             },
+
             Efector: {
                 idEfector: Efector.idEfector,
                 nombre: efectorDB?.nombre ?? 'Desconocido'
             },
+
             Servicio: {
                 idServicio: Servicio.idServicio,
                 nombre: servicioDB?.descripcion ?? 'Desconocido'
             },
+
             fechaCierre: new Date('1900-01-01'),
+
             usuario,
+
             fechaMod: new Date(),
+
             tipoCierreEvaluacion: {
                 id: new mongoose.Types.ObjectId("688240f09cca123543c84b04"),
                 nombre: "Evaluación Abierta"
@@ -51,8 +63,14 @@ router.post('/planillaedcabecera', verifyToken, async (req: Request, res: Respon
     }
 });
 
-router.post('/planillaedcabecera/existe', verifyToken, async (req: Request, res: Response) => {
+
+
+// VERIFICAR SI EXISTE
+
+router.post('/existe', verifyToken, async (req: Request, res: Response) => {
+
     try {
+
         const { periodo, agenteevaluador, Efector, Servicio } = req.body;
 
         if (!periodo || !agenteevaluador || !Efector || !Servicio) {
@@ -60,24 +78,40 @@ router.post('/planillaedcabecera/existe', verifyToken, async (req: Request, res:
         }
 
         const existeCabecera = await PlanillaEvaluacionCabeceraModel.findOne({
+
             periodo: new Date(periodo),
-            'agenteevaluador.idUsuarioEvaluador': new mongoose.Types.ObjectId(agenteevaluador.idUsuarioEvaluador),
+
+            'agenteevaluador.idUsuarioEvaluador':
+                new mongoose.Types.ObjectId(agenteevaluador.idUsuarioEvaluador),
+
             'Efector.idEfector': Efector.idEfector,
+
             'Servicio.idServicio': Servicio.idServicio
+
         });
 
         return successResponse(res, {
+
             existe: !!existeCabecera,
             data: existeCabecera || null
+
         });
 
     } catch {
+
         return errorResponse(res, 'Error al verificar cabecera', 500);
+
     }
 });
 
-router.get('/planillaedcabecera/buscar', verifyToken, async (req: Request, res: Response) => {
+
+
+//  BUSCAR CABECERAS POR EVALUADOR
+
+router.get('/buscar', verifyToken, async (req: Request, res: Response) => {
+
     try {
+
         const { idUsuarioEvaluador } = req.query;
 
         if (!idUsuarioEvaluador) {
@@ -85,21 +119,26 @@ router.get('/planillaedcabecera/buscar', verifyToken, async (req: Request, res: 
         }
 
         const cabeceras = await PlanillaEvaluacionCabeceraModel.find({
-            'agenteevaluador.idUsuarioEvaluador': new mongoose.Types.ObjectId(idUsuarioEvaluador as string)
+            'agenteevaluador.idUsuarioEvaluador':
+                new mongoose.Types.ObjectId(idUsuarioEvaluador as string)
         }).sort({ periodo: 1 });
 
-        return successResponse(res, {
-            total: cabeceras.length,
-            data: cabeceras
-        });
+        return successResponse(res, cabeceras);
 
     } catch {
+
         return errorResponse(res, 'Error al buscar cabeceras', 500);
+
     }
 });
 
+
+//  OBTENER UNA CABECERA
+
 router.get('/:id', verifyToken, async (req: Request, res: Response) => {
+
     try {
+
         const { id } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -107,18 +146,30 @@ router.get('/:id', verifyToken, async (req: Request, res: Response) => {
         }
 
         const cabecera = await PlanillaEvaluacionCabeceraModel.findById(id);
-        if (!cabecera) return errorResponse(res, 'Cabecera no encontrada', 404);
+
+        if (!cabecera) {
+            return errorResponse(res, 'Cabecera no encontrada', 404);
+        }
 
         return successResponse(res, cabecera);
 
     } catch {
+
         return errorResponse(res, 'Error interno', 500);
+
     }
 });
 
-router.delete('/evaluacioncabecera/:id', verifyToken, async (req, res) => {
+
+
+// ELIMINAR CABECERA
+
+router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
+
     try {
-        const cabeceraEliminada = await PlanillaEvaluacionCabeceraModel.findByIdAndDelete(req.params.id);
+
+        const cabeceraEliminada =
+            await PlanillaEvaluacionCabeceraModel.findByIdAndDelete(req.params.id);
 
         if (!cabeceraEliminada) {
             return errorResponse(res, 'Cabecera no encontrada', 404);
@@ -127,29 +178,28 @@ router.delete('/evaluacioncabecera/:id', verifyToken, async (req, res) => {
         return successResponse(res, null, 'Cabecera eliminada');
 
     } catch {
+
         return errorResponse(res, 'Error al eliminar', 500);
+
     }
 });
 
-router.delete('/evaluacioncabecera', verifyToken, async (_req: Request, res: Response) => {
-    try {
-        const resultado = await PlanillaEvaluacionCabeceraModel.deleteMany({});
 
-        return successResponse(res, {
-            deleted: resultado.deletedCount
-        }, 'Cabeceras eliminadas');
-
-    } catch {
-        return errorResponse(res, 'Error al eliminar', 500);
-    }
-});
-
+/* =========================
+   LISTAR TODAS
+========================= */
 router.get('/', verifyToken, async (_req: Request, res: Response) => {
+
     try {
+
         const cabeceras = await PlanillaEvaluacionCabeceraModel.find();
+
         return successResponse(res, cabeceras);
+
     } catch {
+
         return errorResponse(res, 'Error al obtener cabeceras', 500);
+
     }
 });
 

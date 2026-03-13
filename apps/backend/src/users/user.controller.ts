@@ -1,13 +1,18 @@
 import express, { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { User } from './user.schema';
+import { verifyToken } from '../auth/auth.middleware';
+import { successResponse, errorResponse } from '../Utilidades/apiResponse';
 
 const router = express.Router();
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
- * 📋 Obtener todos los usuarios (con filtros opcionales)
+ * Obtener todos los usuarios (con filtros opcionales)
  */
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', verifyToken, async (req: Request, res: Response) => {
   try {
+
     const { apellido, nombre, documento, email, active } = req.query;
     const query: any = {};
 
@@ -17,47 +22,126 @@ router.get('/', async (req: Request, res: Response) => {
     if (email) query.email = new RegExp(email as string, 'i');
     if (active !== undefined) query.active = active === 'true';
 
-    const users = await User.find(query, '-password');
-    res.json(users);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error al obtener usuarios', error: error.message });
+    const users = await User.find(query, '-password').lean();
+
+    return successResponse(res, users, 'Usuarios obtenidos correctamente');
+
+  } catch (error) {
+
+    console.error(error);
+    return errorResponse(res, 'Error al obtener usuarios', 500, isDev ? error : undefined);
+
   }
 });
 
+
 /**
- * ➕ Crear un nuevo usuario
+ * Obtener usuario por ID
  */
-router.post('/', async (req: Request, res: Response) => {
+router.get('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
+
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return errorResponse(res, 'ID inválido', 400);
+    }
+
+    const user = await User.findById(id, '-password').lean();
+
+    if (!user) {
+      return errorResponse(res, 'Usuario no encontrado', 404);
+    }
+
+    return successResponse(res, user, 'Usuario obtenido correctamente');
+
+  } catch (error) {
+
+    console.error(error);
+    return errorResponse(res, 'Error al buscar usuario', 500, isDev ? error : undefined);
+
+  }
+});
+
+
+/**
+ * Crear nuevo usuario
+ */
+router.post('/', verifyToken, async (req: Request, res: Response) => {
+  try {
+
     const newUser = new User(req.body);
     await newUser.save();
-    res.status(201).json(newUser);
+
+    return successResponse(res, newUser, 'Usuario creado correctamente', 201);
+
   } catch (error: any) {
-    res.status(400).json({ message: 'Error al crear usuario', error: error.message });
+
+    console.error(error);
+    return errorResponse(res, 'Error al crear usuario', 400, isDev ? error : undefined);
+
   }
 });
 
+
 /**
- * ✏️ Actualizar usuario
+ * Actualizar usuario
  */
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    res.json(updatedUser);
-  } catch (error: any) {
-    res.status(400).json({ message: 'Error al actualizar usuario', error: error.message });
+
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return errorResponse(res, 'ID inválido', 400);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      req.body,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return errorResponse(res, 'Usuario no encontrado', 404);
+    }
+
+    return successResponse(res, updatedUser, 'Usuario actualizado correctamente');
+
+  } catch (error) {
+
+    console.error(error);
+    return errorResponse(res, 'Error al actualizar usuario', 400, isDev ? error : undefined);
+
   }
 });
 
+
 /**
- * ❌ Eliminar usuario
+ * Eliminar usuario
  */
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Usuario eliminado correctamente' });
-  } catch (error: any) {
-    res.status(400).json({ message: 'Error al eliminar usuario', error: error.message });
+
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return errorResponse(res, 'ID inválido', 400);
+    }
+
+    const deletedUser = await User.findByIdAndDelete(id);
+
+    if (!deletedUser) {
+      return errorResponse(res, 'Usuario no encontrado', 404);
+    }
+
+    return successResponse(res, null, 'Usuario eliminado correctamente');
+
+  } catch (error) {
+
+    console.error(error);
+    return errorResponse(res, 'Error al eliminar usuario', 400, isDev ? error : undefined);
+
   }
 });
 

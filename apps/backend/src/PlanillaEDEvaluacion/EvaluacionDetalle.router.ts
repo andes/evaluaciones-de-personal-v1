@@ -13,7 +13,42 @@ type AgenteSimple = {
     legajo: string;
 };
 
-router.get('/existe/:idCabecera/:idAgente', verifyToken, async (req: Request, res: Response) => {
+
+
+//  Corregir IDs de ítems
+router.put('/corregir-items/:id', verifyToken, async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'ID inválido', 400);
+        }
+
+        const evaluacion = await EvaluacionDetalleModel.findById(id);
+        if (!evaluacion) {
+            return errorResponse(res, 'Evaluación no encontrada', 404);
+        }
+
+        for (const categoria of evaluacion.categorias) {
+            for (const item of categoria.items) {
+                const itemReal = await ItemModel.findOne({ descripcion: item.descripcion });
+                if (itemReal) {
+                    item.idItem = itemReal._id;
+                }
+            }
+        }
+
+        await evaluacion.save();
+
+        return successResponse(res, null, 'IDs de ítems corregidos');
+    } catch (error) {
+        console.error('Error en corregir-items:', error);
+        return errorResponse(res, 'Error interno al corregir ítems', 500);
+    }
+});
+
+// Verificar existencia
+router.get('/existe/:idCabecera/:idAgente', verifyToken, async (req, res) => {
     try {
         const { idCabecera, idAgente } = req.params;
 
@@ -27,13 +62,14 @@ router.get('/existe/:idCabecera/:idAgente', verifyToken, async (req: Request, re
         });
 
         return successResponse(res, { existe: !!existe });
-
-    } catch {
+    } catch (error) {
+        console.error('Error en existe:', error);
         return errorResponse(res, 'Error interno al verificar existencia', 500);
     }
 });
 
-router.get('/por-cabecera/:idCabecera', verifyToken, async (req: Request, res: Response) => {
+// Obtener por cabecera
+router.get('/por-cabecera/:idCabecera', verifyToken, async (req, res) => {
     try {
         const { idCabecera } = req.params;
 
@@ -49,13 +85,14 @@ router.get('/por-cabecera/:idCabecera', verifyToken, async (req: Request, res: R
             .lean();
 
         return successResponse(res, evaluaciones);
-
-    } catch {
+    } catch (error) {
+        console.error('Error en por-cabecera:', error);
         return errorResponse(res, 'Error interno al obtener evaluaciones', 500);
     }
 });
 
-router.get('/por-cabecera/:idCabecera/agentes', verifyToken, async (req: Request, res: Response) => {
+// Agentes por cabecera
+router.get('/por-cabecera/:idCabecera/agentes', verifyToken, async (req, res) => {
     try {
         const { idCabecera } = req.params;
 
@@ -73,16 +110,18 @@ router.get('/por-cabecera/:idCabecera/agentes', verifyToken, async (req: Request
             }
         ).lean<{ agenteEvaluado: AgenteSimple }[]>();
 
-        const lista = agentes.map(a => a.agenteEvaluado).filter(Boolean);
-
-        return successResponse(res, lista);
-
-    } catch {
+        return successResponse(
+            res,
+            agentes.map(a => a.agenteEvaluado).filter(Boolean)
+        );
+    } catch (error) {
+        console.error('Error en agentes:', error);
         return errorResponse(res, 'Error interno al obtener agentes', 500);
     }
 });
 
-router.get('/categorias-items/:idEvaluacion/:idAgente', verifyToken, async (req: Request, res: Response) => {
+// categorías + ítems por cabecera y agente
+router.get('/categorias-items/:idEvaluacion/:idAgente', verifyToken, async (req, res) => {
     try {
         const { idEvaluacion, idAgente } = req.params;
 
@@ -99,51 +138,15 @@ router.get('/categorias-items/:idEvaluacion/:idAgente', verifyToken, async (req:
             return errorResponse(res, 'Evaluación no encontrada', 404);
         }
 
-        const categorias = (evaluacion.categorias || []).map(c => ({
-            idCategoria: c.idCategoria?.toString(),
-            descripcionCategoria: c.descripcionCategoria || 'No encontrada',
-            items: (c.items || []).map(item => ({
-                _id: item.idItem?.toString(),
-                descripcion: item.descripcion || 'No encontrado',
-                puntaje: item.puntaje ?? 0
-            }))
-        }));
-
-        return successResponse(res, categorias);
-
-    } catch {
+        return successResponse(res, evaluacion.categorias ?? []);
+    } catch (error) {
+        console.error('Error en categorias-items:', error);
         return errorResponse(res, 'Error interno al obtener categorías e ítems', 500);
     }
 });
 
-router.put('/corregir-items/:id', verifyToken, async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return errorResponse(res, 'ID inválido', 400);
-        }
-
-        const evaluacion = await EvaluacionDetalleModel.findById(id);
-        if (!evaluacion) return errorResponse(res, 'Evaluación no encontrada', 404);
-
-        for (const categoria of evaluacion.categorias) {
-            for (const item of categoria.items) {
-                const itemReal = await ItemModel.findOne({ descripcion: item.descripcion });
-                if (itemReal) item.idItem = itemReal._id;
-            }
-        }
-
-        await evaluacion.save();
-
-        return successResponse(res, null, 'IDs de ítems corregidos');
-
-    } catch {
-        return errorResponse(res, 'Error interno al corregir ítems', 500);
-    }
-});
-
-router.put('/:idCabecera/agente/:idAgente/tipo-cierreCabecera', verifyToken, async (req: Request, res: Response) => {
+//  Actualizar tipo de cierre
+router.put('/:idCabecera/agente/:idAgente/tipo-cierreCabecera', verifyToken, async (req, res) => {
     try {
         const { idCabecera, idAgente } = req.params;
         const { tipoCierreEvaluacion } = req.body;
@@ -152,113 +155,91 @@ router.put('/:idCabecera/agente/:idAgente/tipo-cierreCabecera', verifyToken, asy
             return errorResponse(res, 'IDs inválidos', 400);
         }
 
-        if (!tipoCierreEvaluacion?.idTipoCierreEvaluacion) {
-            return errorResponse(res, 'Datos de tipo de cierre incompletos', 400);
-        }
-
         const evaluacion = await EvaluacionDetalleModel.findOne({
             idPlanillaEvaluacionCabecera: idCabecera,
             'agenteEvaluado.idAgenteEvaluado': idAgente
         });
 
-        if (!evaluacion) return errorResponse(res, 'Evaluación no encontrada', 404);
+        if (!evaluacion) {
+            return errorResponse(res, 'Evaluación no encontrada', 404);
+        }
 
         evaluacion.tipoCierreEvaluacion = {
-            idTipoCierreEvaluacion: tipoCierreEvaluacion.idTipoCierreEvaluacion,
-            nombreTipoCierreEvaluacion: tipoCierreEvaluacion.nombreTipoCierreEvaluacion ?? '',
-            detalle: tipoCierreEvaluacion.detalle ?? '',
-            descripcion: tipoCierreEvaluacion.descripcion ?? '',
+            ...tipoCierreEvaluacion,
             fechaCierre: new Date()
         };
 
         await evaluacion.save();
 
         return successResponse(res, evaluacion, 'Tipo de cierre actualizado');
-
-    } catch {
+    } catch (error) {
+        console.error('Error en tipo-cierre:', error);
         return errorResponse(res, 'Error interno al actualizar tipo de cierre', 500);
     }
 });
 
-router.post('/', verifyToken, async (req: Request, res: Response) => {
+/* ======================================================
+   CRUD GENÉRICO (SIEMPRE AL FINAL)
+====================================================== */
+
+// POST
+router.post('/', verifyToken, async (req, res) => {
     try {
-        const { _id, idPlanillaEvaluacionCabecera, agenteEvaluado, categorias } = req.body;
-
-        if (!idPlanillaEvaluacionCabecera || !agenteEvaluado?.idAgenteEvaluado) {
-            return errorResponse(res, 'Faltan campos requeridos', 400);
-        }
-
-        const categoriasT = categorias.map((cat: any) => ({
-            idCategoria: cat.idCategoria,
-            descripcionCategoria: cat.descripcionCategoria,
-            items: cat.items.map((i: any) => ({
-                idItem: i.idItem,
-                descripcion: i.descripcion,
-                puntaje: i.puntaje
-            }))
-        }));
-
-        const nueva = new EvaluacionDetalleModel({
-            _id,
-            idPlanillaEvaluacionCabecera,
-            agenteEvaluado,
-            tipoCierreEvaluacion: {
-                idTipoCierreEvaluacion: '691b1629fac1f621db17efa5',
-                nombreTipoCierreEvaluacion: 'Evaluación Abierta',
-                detalle: 'Evaluación Abierta',
-                fechaCierre: new Date(),
-                descripcion: ''
-            },
-            categorias: categoriasT
-        });
-
+        const nueva = new EvaluacionDetalleModel(req.body);
         const guardada = await nueva.save();
-
         return successResponse(res, guardada, 'Evaluación creada', 201);
-
-    } catch {
-        return errorResponse(res, 'Error al crear evaluación', 500);
+    } catch (error: any) {
+        console.error('Error en POST:', error);
+        return errorResponse(res, error.message || 'Error al crear evaluación', 500);
     }
 });
 
-router.get('/:id', verifyToken, async (req: Request, res: Response) => {
+// GET by ID
+router.get('/:id', verifyToken, async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return errorResponse(res, 'ID inválido', 400);
         }
 
-        const evaluacion = await EvaluacionDetalleModel.findById(req.params.id)
-            .populate({ path: 'categorias.idCategoria', select: 'descripcionCategoria' })
-            .populate({ path: 'categorias.items.idItem', select: 'descripcion' })
-            .lean();
+        const evaluacion = await EvaluacionDetalleModel.findById(req.params.id).lean();
 
-        if (!evaluacion) return errorResponse(res, 'Evaluación no encontrada', 404);
+        if (!evaluacion) {
+            return errorResponse(res, 'Evaluación no encontrada', 404);
+        }
 
         return successResponse(res, evaluacion);
-
-    } catch {
+    } catch (error) {
+        console.error('Error en GET by id:', error);
         return errorResponse(res, 'Error al obtener evaluación', 500);
     }
 });
 
-router.put('/:id', verifyToken, async (req: Request, res: Response) => {
+// PUT by ID
+router.put('/:id', verifyToken, async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return errorResponse(res, 'ID inválido', 400);
         }
 
-        const actualizada = await EvaluacionDetalleModel.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const actualizada = await EvaluacionDetalleModel.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
 
-        if (!actualizada) return errorResponse(res, 'Evaluación no encontrada', 404);
+        if (!actualizada) {
+            return errorResponse(res, 'Evaluación no encontrada', 404);
+        }
 
         return successResponse(res, actualizada, 'Evaluación actualizada');
-
-    } catch {
+    } catch (error) {
+        console.error('Error en PUT:', error);
         return errorResponse(res, 'Error al actualizar evaluación', 500);
     }
 });
 
-router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
+// DELETE by ID
+router.delete('/:id', verifyToken, async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return errorResponse(res, 'ID inválido', 400);
@@ -266,22 +247,14 @@ router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
 
         const eliminada = await EvaluacionDetalleModel.findByIdAndDelete(req.params.id);
 
-        if (!eliminada) return errorResponse(res, 'Evaluación no encontrada', 404);
+        if (!eliminada) {
+            return errorResponse(res, 'Evaluación no encontrada', 404);
+        }
 
         return successResponse(res, null, 'Evaluación eliminada');
-
-    } catch {
+    } catch (error) {
+        console.error('Error en DELETE:', error);
         return errorResponse(res, 'Error al eliminar evaluación', 500);
-    }
-});
-
-router.delete('/', verifyToken, async (_req: Request, res: Response) => {
-    try {
-        const result = await EvaluacionDetalleModel.deleteMany({});
-        return successResponse(res, { deleted: result.deletedCount }, 'Todas eliminadas');
-
-    } catch {
-        return errorResponse(res, 'Error al eliminar todas', 500);
     }
 });
 
