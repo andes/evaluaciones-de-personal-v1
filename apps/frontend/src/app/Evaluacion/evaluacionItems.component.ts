@@ -9,6 +9,7 @@ import { PlanillaEDCabeceraService, PlanillaEDCabecera } from '../services/Plani
 import { PlanillaEDDetalleService } from '../services/PlanillaEDDetalle.service';
 import { PlanillaEDItemsService } from '../services/PlanillaEDIItems.service';
 import { EvaluacionResultadosService } from '../services/evaluacionResulado.service';
+import { HeaderSistemaComponent } from '../header/header-sistema.component';
 
 
 
@@ -23,7 +24,8 @@ import { HeaderComponent } from '../header/header.component';
         CommonModule,
         FormsModule,
         RouterModule,
-        HeaderComponent
+        HeaderComponent,
+        HeaderSistemaComponent
     ]
 })
 export class EvaluacionItemsComponent implements OnInit {

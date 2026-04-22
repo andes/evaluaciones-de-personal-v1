@@ -187,6 +187,43 @@ router.post('/', verifyToken, async (req: Request, res: Response) => {
     }
 });
 
+router.put('/:id', verifyToken, async (req: Request, res: Response) => {
+    try {
+        const { descripcion, tipoEvaluacion } = req.body;
+
+        if (!descripcion || !tipoEvaluacion) {
+            return errorResponse(res, 'Datos incompletos', 400);
+        }
+
+        const planilla = await PlanillaEDModel.findById(req.params.id);
+
+        if (!planilla) {
+            return errorResponse(res, 'Planilla no encontrada', 404);
+        }
+
+        // Validar duplicado por tipoEvaluacion
+        const existe = await PlanillaEDModel.findOne({
+            _id: { $ne: req.params.id },
+            "tipoEvaluacion.idTipoEvaluacion": tipoEvaluacion.idTipoEvaluacion
+        });
+
+        if (existe) {
+            return errorResponse(res, 'Ya existe una planilla con ese tipo', 400);
+        }
+
+        //  Actualizar
+        planilla.descripcion = descripcion;
+        planilla.tipoEvaluacion = tipoEvaluacion;
+
+        await planilla.save();
+
+        return successResponse(res, planilla, 'Planilla actualizada');
+    } catch (error) {
+        console.error(error);
+        return errorResponse(res, 'Error al actualizar planilla', 500);
+    }
+});
+
 router.put('/:id/categorias', verifyToken, async (req: Request, res: Response) => {
     try {
         const { categoria, descripcionCategoria, items } = req.body;

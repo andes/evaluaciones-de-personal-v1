@@ -113,6 +113,22 @@ export class PlanillaEDService {
         );
     }
 
+    actualizarPlanillaED(id: string, data: any): Observable<any> {
+        return this.http.put(`${this.baseUrl}/planillasED/${id}`, data).pipe(
+            catchError((error) => {
+                console.error('Error al actualizar planilla:', error);
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error?.error?.message || 'No se pudo actualizar la planilla',
+                    confirmButtonText: 'Cerrar'
+                });
+
+                return throwError(() => error);
+            })
+        );
+    }
 
     actualizarPlanilla(idPlanilla: string, categoria: any): Observable<any> {
 

@@ -17,6 +17,7 @@ import { PlanillaEDService } from '../services/PlanillaED.Service';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { HeaderSistemaComponent } from '../header/header-sistema.component';
 
 const Swal = require('sweetalert2').default;
 
@@ -25,7 +26,8 @@ const Swal = require('sweetalert2').default;
     standalone: true,
     templateUrl: './evaluacionAgente.component.html',
     styleUrls: ['./evaluacionAgente.component.css'],
-    imports: [CommonModule, FormsModule, HeaderComponent]
+    imports: [CommonModule, FormsModule, HeaderComponent, HeaderSistemaComponent]
+
 })
 export class EvaluacionAgenteComponent implements OnInit {
 

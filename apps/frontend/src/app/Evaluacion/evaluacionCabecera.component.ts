@@ -24,7 +24,8 @@ const Swal = require('sweetalert2').default;
         FormsModule,
         HeaderComponent,
         RouterModule,
-        HeaderSistemaComponent
+        HeaderSistemaComponent,
+
     ],
     providers: [EfectoresService],
     templateUrl: './evaluacionCabecera.component.html',

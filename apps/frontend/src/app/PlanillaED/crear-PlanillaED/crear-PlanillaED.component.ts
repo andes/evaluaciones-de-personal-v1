@@ -7,6 +7,8 @@ import { HeaderComponent } from '../../header/header.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
+import { HeaderSistemaComponent } from '../../header/header-sistema.component';
+
 
 
 @Component({
