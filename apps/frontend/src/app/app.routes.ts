@@ -19,7 +19,7 @@ import { EvaluacionCabeceraComponent } from './Evaluacion/evaluacionCabecera.com
 import { EvaluacionAgenteComponent } from './Evaluacion/evaluacionAgente.component';
 import { EvaluacionItemsComponent } from './Evaluacion/evaluacionItems.component';
 import { EvaluacionListadoComponent } from './Evaluacion/evaluacionListado.component';
-
+import { EditarPlanillaEDComponent } from './PlanillaED/editar-PlanillaED/editar-planillaED.component';
 
 export const appRoutes: Route[] = [
     {
@@ -38,7 +38,7 @@ export const appRoutes: Route[] = [
             { path: 'agentes', component: AgentesComponent, canActivate: [AuthGuard] },
             { path: 'planillaed', component: ListarPlanillaEDComponent, canActivate: [AuthGuard] },
             { path: 'crearplanillaItems/:id', component: CrearPlanillaEDItemsComponent, canActivate: [AuthGuard] },
-
+            { path: 'editar-planillaED/:id', component: EditarPlanillaEDComponent, canActivate: [AuthGuard] },
             { path: 'crearplanillaED', component: CrearPlanillaEDComponent, canActivate: [AuthGuard] },
             {
                 path: 'crearplanillaItemsDetalle/:id',

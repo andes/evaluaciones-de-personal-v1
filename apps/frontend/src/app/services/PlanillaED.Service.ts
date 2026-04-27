@@ -113,6 +113,22 @@ export class PlanillaEDService {
         );
     }
 
+    actualizarPlanillaED(id: string, data: any): Observable<any> {
+        return this.http.put(`${this.baseUrl}/planillasED/${id}`, data).pipe(
+            catchError((error) => {
+                console.error('Error al actualizar planilla:', error);
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error?.error?.message || 'No se pudo actualizar la planilla',
+                    confirmButtonText: 'Cerrar'
+                });
+
+                return throwError(() => error);
+            })
+        );
+    }
 
     actualizarPlanilla(idPlanilla: string, categoria: any): Observable<any> {
 
@@ -205,14 +221,21 @@ export class PlanillaEDService {
     }
 
     // Método para obtener los ítems de una categoría específica de una planilla
-    obtenerItemsPorPlanillaYCategoria(planillaId: string, categoriaId: string): Observable<any> {
+    obtenerItemsPorPlanillaYCategoria(
+        planillaId: string,
+        categoriaId: string
+    ): Observable<any[]> {
+
         const url = `${this.baseUrl}/planillasED/${planillaId}/categorias/${categoriaId}/items`;
-        return this.http.get<any>(url).pipe(
+
+        return this.http.get<{ success: boolean; message: string; data: any[] }>(url).pipe(
+            map(resp => resp.data),
             catchError((error) => {
                 console.error('Error al obtener los items por planilla y categoría:', error);
                 return throwError(() => error);
             })
         );
+
     }
 
 

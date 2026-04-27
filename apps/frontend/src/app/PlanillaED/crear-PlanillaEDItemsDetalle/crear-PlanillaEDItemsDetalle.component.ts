@@ -60,8 +60,10 @@ export class CrearPlanillaEDItemsDetalleComponent implements OnInit {
 
         this.planillaEDService.obtenerItemsPorPlanillaYCategoria(this.planillaId, this.categoriaId)
             .subscribe({
-                next: (resp: any) => {
-                    this.items = resp.items ?? [];
+                next: (resp: any[]) => {
+
+
+                    this.items = resp;
                 },
                 error: err => console.error('Error al cargar los ítems de la planilla:', err)
             });

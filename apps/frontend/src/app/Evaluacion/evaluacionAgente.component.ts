@@ -14,6 +14,7 @@ import { TipoCierreEvaluacionService } from '../services/TipoCierreEvaluacionSer
 import { EvaluacionResultadosService } from '../services/evaluacionResulado.service';
 import { EvaluacionService } from '../services/evaluacion.service';
 import { PlanillaEDService } from '../services/PlanillaED.Service';
+import { HeaderSistemaComponent } from '../header/header-sistema.component';
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -25,7 +26,7 @@ const Swal = require('sweetalert2').default;
     standalone: true,
     templateUrl: './evaluacionAgente.component.html',
     styleUrls: ['./evaluacionAgente.component.css'],
-    imports: [CommonModule, FormsModule, HeaderComponent]
+    imports: [CommonModule, FormsModule, HeaderComponent, HeaderSistemaComponent]
 })
 export class EvaluacionAgenteComponent implements OnInit {
 
