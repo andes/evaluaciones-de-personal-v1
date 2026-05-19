@@ -8,9 +8,10 @@ export async function connectDB() {
             serverSelectionTimeoutMS: 5000,
         });
 
-        console.log('✅ Conectado a MongoDB => ', mongoose.connection.host + ':' + mongoose.connection.port + '/' + mongoose.connection.name);
+
+        console.log(' Conectado a MongoDB => ', mongoose.connection.host + ':' + mongoose.connection.port + '/' + mongoose.connection.name);
     } catch (err) {
-        console.error('❌ Error al conectar a MongoDB:', err);
+        console.error(' Error al conectar a MongoDB:', err);
         process.exit(1);
     }
 }
