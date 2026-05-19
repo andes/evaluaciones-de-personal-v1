@@ -50,9 +50,9 @@ const upload = multer({
     }
 });
 
-// ======================
+
 // VALIDADOR SIMPLE
-// ======================
+
 
 function validarAgente(body: any) {
     const { nombre, dni, legajo } = body;

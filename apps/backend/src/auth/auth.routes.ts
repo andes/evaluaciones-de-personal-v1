@@ -15,20 +15,77 @@ const isDev = process.env.NODE_ENV === 'development';
 //LOGIN
 
 router.post('/login', async (req: Request, res: Response) => {
+
     const { dni, password } = req.body;
+
+    /*
+    LOGIN TEMPORAL PARA TESTING
+    Usuario: 2
+    Password: 2
+    Eliminar antes de producción.
+     */
+
+    if (dni === '2' && password === '2') {
+
+        const payload = {
+            id: '69146807666493f823449432',
+            dni: '2',
+            nombre: 'admin testing',
+            email: 'testing@test.com',
+            rol: 'administrador'
+        };
+
+        const JWT_SECRET = process.env.JWT_SECRET;
+
+        if (!JWT_SECRET) {
+
+            return errorResponse(
+                res,
+                'JWT_SECRET no configurado',
+                500
+            );
+        }
+
+        const token = jwt.sign(
+            payload,
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        return successResponse(
+            res,
+            {
+                token,
+                user: payload
+            },
+            'Login testing exitoso'
+        );
+    }
+
+    // ============================================
+    // LOGIN ORIGINAL
+
 
     try {
 
         const user = await User.findOne({ dni });
 
         if (!user) {
-            return errorResponse(res, 'Usuario no encontrado', 401);
+            return errorResponse(
+                res,
+                'Usuario no encontrado',
+                401
+            );
         }
 
         const isMatch = await user.comparePassword(password);
 
         if (!isMatch) {
-            return errorResponse(res, 'Contraseña incorrecta', 401);
+            return errorResponse(
+                res,
+                'Contraseña incorrecta',
+                401
+            );
         }
 
         const payload = {
@@ -42,11 +99,23 @@ router.post('/login', async (req: Request, res: Response) => {
         const JWT_SECRET = process.env.JWT_SECRET;
 
         if (!JWT_SECRET) {
-            console.error('Faltó definir JWT_SECRET en el archivo .env');
-            return errorResponse(res, 'Error interno: JWT_SECRET no configurado', 500);
+
+            console.error(
+                'Faltó definir JWT_SECRET en el archivo .env'
+            );
+
+            return errorResponse(
+                res,
+                'Error interno: JWT_SECRET no configurado',
+                500
+            );
         }
 
-        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign(
+            payload,
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
 
         return successResponse(
             res,

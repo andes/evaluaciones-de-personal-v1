@@ -1,12 +1,29 @@
+// tareas realizadas 
+// Se tipó el payload del JWT para adjuntar al request
+// los datos del usuario autenticado (id, dni, nombre, email y rol)
+// evitando el uso de "any" y mejorando la validación en TypeScript.
+
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { errorResponse } from '../Utilidades/apiResponse';
 
-export interface AuthRequest extends Request {
-    user?: any;
+interface JwtPayload {
+    id: string;
+    dni: string;
+    nombre: string;
+    email: string;
+    rol: string;
 }
 
-export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
+export interface AuthRequest extends Request {
+    user?: JwtPayload;
+}
+
+export const verifyToken = (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
 
     const authHeader = req.headers.authorization;
 
@@ -14,7 +31,7 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
         return errorResponse(res, 'Acceso denegado. No hay token.', 401);
     }
 
-    // Formato esperado: Bearer TOKEN
+    // Bearer TOKEN
     const token = authHeader.split(' ')[1];
 
     if (!token) {
@@ -26,7 +43,7 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
         const decoded = jwt.verify(
             token,
             process.env.JWT_SECRET as string
-        );
+        ) as JwtPayload;
 
         req.user = decoded;
 
