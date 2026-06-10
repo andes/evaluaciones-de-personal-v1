@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { EfectorModel } from '../schemas/efectores';
 import { verifyToken } from '../../../auth/auth.middleware';
 import { successResponse, errorResponse } from '../../../Utilidades/apiResponse';
+import { authorizeRoles } from '../../../auth/role.middleware';
+import { PERMISOS } from '../../../auth/roles.constanst';
 
 const router = Router();
 
-router.get('/rmEfectores', verifyToken, async (req, res) => {
+router.get('/rmEfectores', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const data = await EfectorModel.find().sort({ descripcion: 1 });
         return successResponse(res, data, 'Efectores obtenidos correctamente');
@@ -14,7 +16,7 @@ router.get('/rmEfectores', verifyToken, async (req, res) => {
     }
 });
 
-router.get('/rmEfectores/:id', verifyToken, async (req, res) => {
+router.get('/rmEfectores/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const respuesta = await EfectorModel.findById(req.params.id);
 
@@ -28,7 +30,7 @@ router.get('/rmEfectores/:id', verifyToken, async (req, res) => {
     }
 });
 
-router.post('/rmEfectores', verifyToken, async (req, res) => {
+router.post('/rmEfectores', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const { nombre } = req.body;
 

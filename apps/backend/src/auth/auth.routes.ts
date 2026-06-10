@@ -5,6 +5,8 @@ import { User } from '../users/user.schema';
 import jwt from 'jsonwebtoken';
 import { verifyToken } from '../auth/auth.middleware';
 import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import { authorizeRoles } from './role.middleware';
+import { PERMISOS } from './roles.constanst';
 
 dotenv.config();
 
@@ -13,6 +15,8 @@ const isDev = process.env.NODE_ENV === 'development';
 
 
 //LOGIN
+
+/*
 
 router.post('/login', async (req: Request, res: Response) => {
 
@@ -24,7 +28,7 @@ router.post('/login', async (req: Request, res: Response) => {
     Password: 2
     Eliminar antes de producción.
      */
-
+/*
     if (dni === '2' && password === '2') {
 
         const payload = {
@@ -32,7 +36,7 @@ router.post('/login', async (req: Request, res: Response) => {
             dni: '2',
             nombre: 'admin testing',
             email: 'testing@test.com',
-            rol: 'administrador'
+            rol: 'Administrador'
         };
 
         const JWT_SECRET = process.env.JWT_SECRET;
@@ -136,7 +140,59 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 });
 
+*/
+router.post('/login', async (req: Request, res: Response) => {
+    const { dni, password } = req.body;
 
+    try {
+
+        const user = await User.findOne({ dni });
+
+        if (!user) {
+            return errorResponse(res, 'Usuario no encontrado', 401);
+        }
+
+        const isMatch = await user.comparePassword(password);
+
+        if (!isMatch) {
+            return errorResponse(res, 'Contraseña incorrecta', 401);
+        }
+
+        const payload = {
+            id: user._id,
+            dni: user.dni,
+            nombre: user.nombre,
+            email: user.email,
+            rol: user.rol
+        };
+
+        const JWT_SECRET = process.env.JWT_SECRET;
+
+        if (!JWT_SECRET) {
+            console.error('Faltó definir JWT_SECRET en el archivo .env');
+            return errorResponse(res, 'Error interno: JWT_SECRET no configurado', 500);
+        }
+
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+        return successResponse(
+            res,
+            { token, user: payload },
+            'Login exitoso'
+        );
+
+    } catch (error) {
+
+        console.error('Error en /login:', error);
+
+        return errorResponse(
+            res,
+            'Error en el servidor',
+            500,
+            isDev ? error : undefined
+        );
+    }
+});
 
 // REGISTRO DE NUEVO USUARIO
 
@@ -200,7 +256,7 @@ router.post('/register', verifyToken, async (req: Request, res: Response) => {
 
 //LISTAR USUARIOS
 
-router.get('/users', verifyToken, async (_req: Request, res: Response) => {
+router.get('/users', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (_req: Request, res: Response) => {
 
     try {
 
@@ -225,7 +281,7 @@ router.get('/users', verifyToken, async (_req: Request, res: Response) => {
 
 // ACTUALIZAR USUARIO
 
-router.put('/users/:id', verifyToken, async (req: Request, res: Response) => {
+router.put('/users/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req: Request, res: Response) => {
 
     try {
 
@@ -272,7 +328,7 @@ router.put('/users/:id', verifyToken, async (req: Request, res: Response) => {
 
 //ELIMINAR USUARIO
 
-router.delete('/users/:id', verifyToken, async (req: Request, res: Response) => {
+router.delete('/users/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req: Request, res: Response) => {
 
     try {
 

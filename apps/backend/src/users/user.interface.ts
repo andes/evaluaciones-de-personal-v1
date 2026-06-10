@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export interface IUser extends Document {
     dni: string;
@@ -6,5 +6,9 @@ export interface IUser extends Document {
     nombre: string;
     email: string;
     rol: string;
+    servicios: {
+        idServicio: Types.ObjectId;
+        descripcion: string;
+    }[];
     comparePassword(passwordAttempt: string): Promise<boolean>;
 }

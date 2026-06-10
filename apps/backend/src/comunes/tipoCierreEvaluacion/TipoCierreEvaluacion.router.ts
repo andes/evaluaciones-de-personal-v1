@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { TipoCierreEvaluacionModel } from './TipoCierreEvaluacion.schema';
 import { verifyToken } from '../../auth/auth.middleware';
 import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
+import { authorizeRoles } from '../../auth/role.middleware';
+import { PERMISOS } from '../../auth/roles.constanst';
 
 const router = Router();
 
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const data = await TipoCierreEvaluacionModel.find().sort({ nombre: 1 });
         return successResponse(res, data, 'Datos obtenidos correctamente');
@@ -14,7 +16,7 @@ router.get('/', verifyToken, async (req, res) => {
     }
 });
 
-router.get('/:id', verifyToken, async (req, res) => {
+router.get('/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const data = await TipoCierreEvaluacionModel.findById(req.params.id);
 
@@ -28,7 +30,7 @@ router.get('/:id', verifyToken, async (req, res) => {
     }
 });
 
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const nuevo = await TipoCierreEvaluacionModel.create(req.body);
 
@@ -43,7 +45,7 @@ router.post('/', verifyToken, async (req, res) => {
     }
 });
 
-router.put('/:id', verifyToken, async (req, res) => {
+router.put('/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const actualizado = await TipoCierreEvaluacionModel.findByIdAndUpdate(
             req.params.id,

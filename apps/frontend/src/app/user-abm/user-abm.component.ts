@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../services/user.services';
 import { HeaderComponent } from '../header/header.component';
+import { ServiciosService } from '../services/servicios.service';
 import Swal from 'sweetalert2';
+
 
 @Component({
     selector: 'app-user-abm',
@@ -18,8 +20,13 @@ export class UserAbmComponent implements OnInit {
     usuarioSeleccionado: any = null;
     mostrarModal = false;
     esEdicion = false;
+    mostrarModalServicios = false;
+    servicios: any[] = [];
+    servicioSeleccionado = '';
+    serviciosAsignados: any[] = [];
 
-    // ✅ Inicialización consistente con backend
+
+    // nicialización consistente con backend
     nuevoUsuario = {
         dni: '',
         password: '',
@@ -28,8 +35,13 @@ export class UserAbmComponent implements OnInit {
         rol: ''
     };
 
+    cambioServicio(valor: any): void {
+
+    }
+
     constructor(
         private userService: UserService,
+        private serviciosService: ServiciosService,
         private router: Router
     ) { }
 
@@ -39,8 +51,11 @@ export class UserAbmComponent implements OnInit {
 
     cargarUsuarios(): void {
         this.userService.getUsers().subscribe({
-            next: (data) => {
-                this.usuarios = data;
+            next: (data: any) => {
+
+
+
+                this.usuarios = data.data;
             },
             error: (err) => {
                 console.error('Error al obtener usuarios', err);
@@ -153,6 +168,154 @@ export class UserAbmComponent implements OnInit {
             }
         });
     }
+
+    abrirModalServicios(usuario: any): void {
+
+        this.usuarioSeleccionado = usuario;
+
+        this.serviciosAsignados = [...(usuario.servicios || [])];
+
+        this.mostrarModalServicios = true;
+
+        this.cargarServicios();
+    }
+
+    agregarServicio(): void {
+
+
+
+        const servicio = this.servicios.find(
+            s => s._id === this.servicioSeleccionado
+        );
+
+
+        if (!servicio) {
+
+
+
+            Swal.fire(
+                'Atención',
+                'Debe seleccionar un servicio',
+                'warning'
+            );
+
+            return;
+        }
+
+        const existe = this.serviciosAsignados.some(
+            x => x.idServicio === servicio._id
+        );
+
+        if (existe) {
+
+            Swal.fire(
+                'Atención',
+                'El servicio ya está asignado',
+                'warning'
+            );
+
+            return;
+        }
+
+        this.serviciosAsignados.push({
+            idServicio: servicio._id,
+            descripcion: servicio.descripcion
+        });
+
+
+
+        this.userService.updateServicios(
+            this.usuarioSeleccionado._id,
+            this.serviciosAsignados
+        ).subscribe({
+
+            next: (resp) => {
+
+
+                Swal.fire(
+                    'Éxito',
+                    'Servicios actualizados correctamente',
+                    'success'
+                );
+
+                this.cargarUsuarios();
+
+                // opcional: cerrar modal
+                // this.cerrarModalServicios();
+
+            },
+
+            error: (err) => {
+
+                Swal.fire(
+                    'Error',
+                    'No se pudieron guardar los servicios',
+                    'error'
+                );
+
+            }
+
+        });
+
+    }
+    cargarServicios(): void {
+        this.serviciosService.getServicios().subscribe({
+            next: (resp: any) => {
+                this.servicios = resp.data || resp;
+
+            }
+        });
+    }
+    /*
+        guardarServicios(): void {
+    
+            console.log('================================');
+            console.log('ENTRO A GUARDAR');
+            console.log('USUARIO:', this.usuarioSeleccionado);
+            console.log('SERVICIOS:', this.serviciosAsignados);
+            console.log('================================');
+    
+            this.userService.updateServicios(
+                this.usuarioSeleccionado._id,
+                this.serviciosAsignados
+            ).subscribe({
+    
+                next: (resp) => {
+    
+                    console.log('RESPUESTA PUT:', resp);
+    
+                    Swal.fire(
+                        'Éxito',
+                        'Servicios actualizados correctamente',
+                        'success'
+                    );
+    
+                    this.cargarUsuarios();
+                    this.cerrarModalServicios();
+    
+                },
+    
+                error: (err) => {
+    
+                    console.error('ERROR PUT:', err);
+    
+                    Swal.fire(
+                        'Error',
+                        'No se pudieron guardar los servicios',
+                        'error'
+                    );
+    
+                }
+    
+            });
+    
+        }
+        */
+    cerrarModalServicios(): void {
+        this.mostrarModalServicios = false;
+        this.usuarioSeleccionado = null;
+    }
+
 
     volver(): void {
         this.router.navigate(['/menu']);

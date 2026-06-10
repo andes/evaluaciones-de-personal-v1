@@ -5,13 +5,15 @@ import { ServicioModel } from '../comunes/Servicios/Schemas/servicios';
 import { EfectorModel } from '../comunes/Efectores/schemas/efectores';
 import { verifyToken } from '../auth/auth.middleware';
 import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import { authorizeRoles } from '../auth/role.middleware';
+import { PERMISOS } from '../auth/roles.constanst';
 
 const router = Router();
 
 
 // CREAR CABECERA
 
-router.post('/', verifyToken, async (req: Request, res: Response) => {
+router.post('/', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
 
         const { periodo, agenteevaluador, Efector, Servicio, usuario } = req.body;
@@ -67,7 +69,7 @@ router.post('/', verifyToken, async (req: Request, res: Response) => {
 
 // VERIFICAR SI EXISTE
 
-router.post('/existe', verifyToken, async (req: Request, res: Response) => {
+router.post('/existe', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -108,7 +110,7 @@ router.post('/existe', verifyToken, async (req: Request, res: Response) => {
 
 //  BUSCAR CABECERAS POR EVALUADOR
 
-router.get('/buscar', verifyToken, async (req: Request, res: Response) => {
+router.get('/buscar', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -135,7 +137,7 @@ router.get('/buscar', verifyToken, async (req: Request, res: Response) => {
 
 //  OBTENER UNA CABECERA
 
-router.get('/:id', verifyToken, async (req: Request, res: Response) => {
+router.get('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -164,7 +166,7 @@ router.get('/:id', verifyToken, async (req: Request, res: Response) => {
 
 // ELIMINAR CABECERA
 
-router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
+router.delete('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -185,10 +187,8 @@ router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
 });
 
 
-/* =========================
-   LISTAR TODAS
-========================= */
-router.get('/', verifyToken, async (_req: Request, res: Response) => {
+
+router.get('/', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (_req: Request, res: Response) => {
 
     try {
 

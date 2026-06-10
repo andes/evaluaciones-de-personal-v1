@@ -7,6 +7,8 @@ import csvParser from 'csv-parser';
 import multer from 'multer';
 import { verifyToken } from '../../auth/auth.middleware';
 import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
+import { authorizeRoles } from '../../auth/role.middleware';
+import { PERMISOS } from '../../auth/roles.constanst';
 
 
 
@@ -70,50 +72,60 @@ function validarAgente(body: any) {
 }
 
 
+router.get('/rAgentes', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES),
+    async (req, res) => {
 
-router.get('/rAgentes', verifyToken, async (req, res) => {
-    try {
+        console.log('ENTRO A RAGENTES');
 
-        const search = req.query.search?.toString().trim() || '';
-        const tipo = req.query.tipo?.toString() || 'nombre';
+        try {
 
-        console.log('SEARCH:', search);
-        console.log('TIPO:', tipo);
+            const search = req.query.search?.toString().trim() || '';
+            const tipo = req.query.tipo?.toString() || 'nombre';
 
-        let filtro: any = {
-            activo: { $ne: false }
-        };
+            console.log('SEARCH:', search);
+            console.log('TIPO:', tipo);
 
-        if (search !== '') {
+            let filtro: any = {
+                activo: { $ne: false }
+            };
 
-            if (tipo === 'nombre') {
-                filtro.nombre = { $regex: search, $options: 'i' };
+            if (search !== '') {
+
+                if (tipo === 'nombre') {
+                    filtro.nombre = { $regex: search, $options: 'i' };
+                }
+
+                if (tipo === 'legajo') {
+                    filtro.legajo = search;
+                }
             }
 
-            if (tipo === 'legajo') {
-                filtro.legajo = search;
+            let query = AgenteModel.find(filtro)
+                .sort({ nombre: 1 });
+
+            if (search === '') {
+                query = query.limit(20);
             }
+
+            const data = await query.lean();
+
+            return successResponse(res, data, 'Agentes obtenidos correctamente');
+
+        } catch (error) {
+
+            console.error(error);
+
+            return errorResponse(
+                res,
+                'Error al obtener agentes',
+                500
+            );
         }
-
-        let query = AgenteModel.find(filtro)
-            .sort({ nombre: 1 });
-
-        if (search === '') {
-            query = query.limit(20);
-        }
-
-        const data = await query.lean();
-
-        return successResponse(res, data, 'Agentes obtenidos correctamente');
-
-    } catch (error) {
-        console.error(error);
-        return errorResponse(res, 'Error al obtener agentes', 500);
     }
-});
+);
 
 
-router.get('/rAgentes/:id', verifyToken, async (req, res) => {
+router.get('/rAgentes/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -137,7 +149,7 @@ router.get('/rAgentes/:id', verifyToken, async (req, res) => {
 
 
 
-router.post('/rAgentes', verifyToken, async (req, res) => {
+router.post('/rAgentes', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const errorValidacion = validarAgente(req.body);
         if (errorValidacion) {
@@ -166,7 +178,7 @@ router.post('/rAgentes', verifyToken, async (req, res) => {
 
 
 
-router.put('/rAgentes/:id', verifyToken, async (req, res) => {
+router.put('/rAgentes/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -209,64 +221,60 @@ router.put('/rAgentes/:id', verifyToken, async (req, res) => {
 
 
 
-router.post(
-    '/rAgentes/importar-csv',
-    verifyToken,
-    upload.single('archivo'),
-    async (req, res) => {
+router.post('/rAgentes/importar-csv', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), upload.single('archivo'), async (req, res) => {
 
-        if (!req.file) {
-            return errorResponse(res, 'No se subió ningún archivo CSV', 400);
-        }
+    if (!req.file) {
+        return errorResponse(res, 'No se subió ningún archivo CSV', 400);
+    }
 
-        const filePath = req.file.path;
-        const agentesNuevos: { nombre: string; dni: number; legajo: number }[] = [];
+    const filePath = req.file.path;
+    const agentesNuevos: { nombre: string; dni: number; legajo: number }[] = [];
 
-        try {
-            fs.createReadStream(filePath)
-                .pipe(csvParser({ separator: ';' }))
-                .on('data', (row: AgenteCSVRow) => {
+    try {
+        fs.createReadStream(filePath)
+            .pipe(csvParser({ separator: ';' }))
+            .on('data', (row: AgenteCSVRow) => {
 
-                    const legajo = Number(row.Legajo);
-                    const nombre = row.nombre?.trim();
-                    const dni = Number(row.dni);
+                const legajo = Number(row.Legajo);
+                const nombre = row.nombre?.trim();
+                const dni = Number(row.dni);
 
-                    if (!legajo || !nombre || !dni) return;
+                if (!legajo || !nombre || !dni) return;
 
-                    agentesNuevos.push({ nombre, dni, legajo });
-                })
-                .on('error', (err) => {
+                agentesNuevos.push({ nombre, dni, legajo });
+            })
+            .on('error', (err) => {
+                console.error(err);
+                fs.unlinkSync(filePath);
+                return errorResponse(res, 'Error leyendo el CSV', 500, isDev ? err : undefined);
+            })
+            .on('end', async () => {
+                try {
+                    if (agentesNuevos.length > 0) {
+                        await AgenteModel.insertMany(agentesNuevos, { ordered: false });
+                    }
+
+                    fs.unlinkSync(filePath);
+
+                    return successResponse(
+                        res,
+                        { insertados: agentesNuevos.length },
+                        'Importación completa'
+                    );
+
+                } catch (err) {
                     console.error(err);
                     fs.unlinkSync(filePath);
-                    return errorResponse(res, 'Error leyendo el CSV', 500, isDev ? err : undefined);
-                })
-                .on('end', async () => {
-                    try {
-                        if (agentesNuevos.length > 0) {
-                            await AgenteModel.insertMany(agentesNuevos, { ordered: false });
-                        }
+                    return errorResponse(res, 'Error al insertar agentes', 500, isDev ? err : undefined);
+                }
+            });
 
-                        fs.unlinkSync(filePath);
-
-                        return successResponse(
-                            res,
-                            { insertados: agentesNuevos.length },
-                            'Importación completa'
-                        );
-
-                    } catch (err) {
-                        console.error(err);
-                        fs.unlinkSync(filePath);
-                        return errorResponse(res, 'Error al insertar agentes', 500, isDev ? err : undefined);
-                    }
-                });
-
-        } catch (err) {
-            console.error(err);
-            fs.unlinkSync(filePath);
-            return errorResponse(res, 'Error al procesar el archivo CSV', 500, isDev ? err : undefined);
-        }
+    } catch (err) {
+        console.error(err);
+        fs.unlinkSync(filePath);
+        return errorResponse(res, 'Error al procesar el archivo CSV', 500, isDev ? err : undefined);
     }
+}
 );
 
 export default router;

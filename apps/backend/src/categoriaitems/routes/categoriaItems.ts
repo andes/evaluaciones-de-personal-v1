@@ -2,12 +2,13 @@ import { Router } from 'express';
 import { CategoriaItemModel as modelo } from '../schemas/categoriaItems';
 import { verifyToken } from '../../auth/auth.middleware';
 import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
+import { authorizeRoles } from '../../auth/role.middleware';
 
 const router = Router();
 
 
 
-router.get('/rmCategoriaItems', verifyToken, async (req, res) => {
+router.get('/rmCategoriaItems', verifyToken, authorizeRoles('administrador'), async (req, res) => {
     try {
         const data = await modelo.find().sort({ descripcion: 1 });
 
@@ -24,7 +25,7 @@ router.get('/rmCategoriaItems', verifyToken, async (req, res) => {
 
 
 
-router.get('/rmCategoriaItems/:id', verifyToken, async (req, res) => {
+router.get('/rmCategoriaItems/:id', verifyToken, authorizeRoles('administrador'), async (req, res) => {
     try {
         const doc = await modelo.findById(req.params.id);
 
@@ -40,7 +41,7 @@ router.get('/rmCategoriaItems/:id', verifyToken, async (req, res) => {
 });
 
 
-router.get('/rmCategoriaItems/verificar-descripcion/:descripcion', verifyToken, async (req, res) => {
+router.get('/rmCategoriaItems/verificar-descripcion/:descripcion', verifyToken, authorizeRoles('administrador'), async (req, res) => {
     try {
         const existe = await modelo.findOne({
             descripcion: req.params.descripcion
@@ -58,7 +59,7 @@ router.get('/rmCategoriaItems/verificar-descripcion/:descripcion', verifyToken, 
 });
 
 
-router.post('/rCategoriaItems', verifyToken, async (req, res) => {
+router.post('/rCategoriaItems', verifyToken, authorizeRoles('administrador'), async (req, res) => {
     try {
 
         if (Array.isArray(req.body)) {
@@ -87,7 +88,7 @@ router.post('/rCategoriaItems', verifyToken, async (req, res) => {
 });
 
 
-router.put('/rCategoriaItems/:id', verifyToken, async (req, res) => {
+router.put('/rCategoriaItems/:id', verifyToken, authorizeRoles('administrador'), async (req, res) => {
     try {
 
         const yaExiste = await modelo.findOne({
@@ -125,7 +126,7 @@ router.put('/rCategoriaItems/:id', verifyToken, async (req, res) => {
 });
 
 
-router.delete('/rCategoriaItems/:id', verifyToken, async (req, res) => {
+router.delete('/rCategoriaItems/:id', verifyToken, authorizeRoles('administrador'), async (req, res) => {
     try {
 
         const deleted = await modelo.findByIdAndDelete(req.params.id);

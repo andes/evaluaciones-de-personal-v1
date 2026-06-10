@@ -3,6 +3,7 @@ import { EvaluacionDetalleModel } from './EvaluacionDetalle.schema';
 import * as mongoose from 'mongoose';
 import { verifyToken } from '../auth/auth.middleware';
 import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import { User } from '../users/user.schema';
 
 const router = Router();
 

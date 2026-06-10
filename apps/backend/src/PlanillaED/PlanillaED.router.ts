@@ -4,14 +4,14 @@ import { ItemModel } from '../comunes/items/items.schema';
 import mongoose from 'mongoose';
 import { verifyToken } from '../auth/auth.middleware';
 import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import { authorizeRoles } from '../auth/role.middleware';
+import { PERMISOS } from '../auth/roles.constanst';
 
 const router = Router();
 
-/* =========================================================
-   BUSQUEDAS ESPECIFICAS (SIEMPRE PRIMERO)
-========================================================= */
 
-router.get('/buscar-por-efector-servicio', verifyToken, async (req: Request, res: Response) => {
+
+router.get('/buscar-por-efector-servicio', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
 
         const { idEfector, idServicio } = req.query;
@@ -40,7 +40,7 @@ router.get('/buscar-por-efector-servicio', verifyToken, async (req: Request, res
 });
 
 
-router.get('/buscar-por-tipo-evaluacion/:idTipoEvaluacion', verifyToken, async (req: Request, res: Response) => {
+router.get('/buscar-por-tipo-evaluacion/:idTipoEvaluacion', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -68,11 +68,9 @@ router.get('/buscar-por-tipo-evaluacion/:idTipoEvaluacion', verifyToken, async (
 });
 
 
-/* =========================================================
-   ITEMS POR PLANILLA Y CATEGORIA  ← ESTA FALTABA
-========================================================= */
 
-router.get('/:idPlanilla/categorias/:idCategoria/items', verifyToken, async (req: Request, res: Response) => {
+
+router.get('/:idPlanilla/categorias/:idCategoria/items', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -112,11 +110,8 @@ router.get('/:idPlanilla/categorias/:idCategoria/items', verifyToken, async (req
 });
 
 
-/* =========================================================
-   CATEGORIAS
-========================================================= */
 
-router.get('/:id/categorias', verifyToken, async (req: Request, res: Response) => {
+router.get('/:id/categorias', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -152,11 +147,8 @@ router.get('/:id/categorias', verifyToken, async (req: Request, res: Response) =
 });
 
 
-/* =========================================================
-   ITEMS DISPONIBLES
-========================================================= */
 
-router.get('/:idDocumento/items-disponibles', verifyToken, async (req: Request, res: Response) => {
+router.get('/:idDocumento/items-disponibles', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -186,11 +178,8 @@ router.get('/:idDocumento/items-disponibles', verifyToken, async (req: Request, 
 });
 
 
-/* =========================================================
-   VALIDACION EXISTENCIA ITEM
-========================================================= */
 
-router.get('/:idPlanilla/items/existe', verifyToken, async (req: Request, res: Response) => {
+router.get('/:idPlanilla/items/existe', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -234,11 +223,9 @@ router.get('/:idPlanilla/items/existe', verifyToken, async (req: Request, res: R
 });
 
 
-/* =========================================================
-   ELIMINAR ITEM
-========================================================= */
 
-router.delete('/eliminar-item', verifyToken, async (req: Request, res: Response) => {
+
+router.delete('/eliminar-item', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -267,11 +254,9 @@ router.delete('/eliminar-item', verifyToken, async (req: Request, res: Response)
 });
 
 
-/* =========================================================
-   CRUD GENERAL
-========================================================= */
 
-router.get('/', verifyToken, async (_req: Request, res: Response) => {
+
+router.get('/', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (_req: Request, res: Response) => {
 
     try {
 
@@ -292,7 +277,7 @@ router.get('/', verifyToken, async (_req: Request, res: Response) => {
 });
 
 
-router.post('/', verifyToken, async (req: Request, res: Response) => {
+router.post('/', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -325,7 +310,7 @@ router.post('/', verifyToken, async (req: Request, res: Response) => {
 });
 
 
-router.put('/:id', verifyToken, async (req: Request, res: Response) => {
+router.put('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -365,7 +350,7 @@ router.put('/:id', verifyToken, async (req: Request, res: Response) => {
 });
 
 
-router.put('/:id/categorias', verifyToken, async (req: Request, res: Response) => {
+router.put('/:id/categorias', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 
@@ -423,7 +408,7 @@ router.put('/:id/categorias', verifyToken, async (req: Request, res: Response) =
 });
 
 
-router.get('/:id', verifyToken, async (req: Request, res: Response) => {
+router.get('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     try {
 

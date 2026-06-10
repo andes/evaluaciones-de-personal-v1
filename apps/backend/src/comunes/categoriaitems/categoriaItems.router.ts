@@ -3,11 +3,13 @@ import mongoose from 'mongoose';
 import { CategoriaItemModel as modelo } from './categoria.schema';
 import { verifyToken } from '../../auth/auth.middleware';
 import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
+import { authorizeRoles } from '../../auth/role.middleware';
+import { PERMISOS } from '../../auth/roles.constanst';
 
 const router = Router();
 
 
-router.get('/rmCategoriaItems', verifyToken, async (req, res) => {
+router.get('/rmCategoriaItems', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const data = await modelo
             .find()
@@ -21,7 +23,7 @@ router.get('/rmCategoriaItems', verifyToken, async (req, res) => {
     }
 });
 
-router.get('/rmCategoriaItems/verificar-descripcion/:descripcion', verifyToken, async (req, res) => {
+router.get('/rmCategoriaItems/verificar-descripcion/:descripcion', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const existe = await modelo
             .findOne({ descripcion: req.params.descripcion })
@@ -39,7 +41,7 @@ router.get('/rmCategoriaItems/verificar-descripcion/:descripcion', verifyToken, 
 });
 
 
-router.get('/rmCategoriaItems/:id', verifyToken, async (req, res) => {
+router.get('/rmCategoriaItems/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
 
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -62,7 +64,7 @@ router.get('/rmCategoriaItems/:id', verifyToken, async (req, res) => {
 });
 
 
-router.post('/rCategoriaItems', async (req, res) => {
+router.post('/rCategoriaItems', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
 
         if (Array.isArray(req.body)) {
@@ -80,7 +82,7 @@ router.post('/rCategoriaItems', async (req, res) => {
 });
 
 
-router.put('/rCategoriaItems/:id', verifyToken, async (req, res) => {
+router.put('/rCategoriaItems/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
 
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {

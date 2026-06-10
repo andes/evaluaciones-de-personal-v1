@@ -3,10 +3,12 @@ import { EvaluacionDetalleModel } from './EvaluacionDetalle.schema';
 import * as mongoose from 'mongoose';
 import { verifyToken } from '../auth/auth.middleware';
 import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import { authorizeRoles } from '../auth/role.middleware';
+import { PERMISOS } from '../auth/roles.constanst';
 
 const router = Router();
 
-router.put('/actualizar-puntaje', verifyToken, async (req: Request, res: Response) => {
+router.put('/actualizar-puntaje', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
         const { idPlanillaEvaluacionCabecera, idAgenteEvaluado, idItem, nuevoPuntaje } = req.body;
 
@@ -59,7 +61,7 @@ router.put('/actualizar-puntaje', verifyToken, async (req: Request, res: Respons
     }
 });
 
-router.put('/test', verifyToken, (req: Request, res: Response) => {
+router.put('/test', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), (req: Request, res: Response) => {
     return successResponse(res, { recibido: req.body });
 });
 

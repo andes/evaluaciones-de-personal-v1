@@ -3,11 +3,13 @@ import { TipoEvaluacionModel } from './TipoEvaluacion.schema';
 import { verifyToken } from '../auth/auth.middleware';
 import { successResponse, errorResponse } from '../Utilidades/apiResponse';
 import * as mongoose from 'mongoose';
+import { authorizeRoles } from '../auth/role.middleware';
+import { PERMISOS } from '../auth/roles.constanst';
 
 const router = Router();
 
 
-router.get('/', verifyToken, async (_req: Request, res: Response) => {
+router.get('/', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (_req: Request, res: Response) => {
     try {
         const tipos = await TipoEvaluacionModel
             .find()
@@ -22,7 +24,7 @@ router.get('/', verifyToken, async (_req: Request, res: Response) => {
 });
 
 
-router.get('/:id', verifyToken, async (req: Request, res: Response) => {
+router.get('/:id', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
@@ -45,7 +47,7 @@ router.get('/:id', verifyToken, async (req: Request, res: Response) => {
 });
 
 
-router.post('/', verifyToken, async (req: Request, res: Response) => {
+router.post('/', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
         const { nombre, descripcion } = req.body;
 
@@ -77,7 +79,7 @@ router.post('/', verifyToken, async (req: Request, res: Response) => {
 
 
 
-router.put('/:id', verifyToken, async (req: Request, res: Response) => {
+router.put('/:id', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { nombre, descripcion } = req.body;
@@ -116,7 +118,7 @@ router.put('/:id', verifyToken, async (req: Request, res: Response) => {
 
 
 
-router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
+router.delete('/:id', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 

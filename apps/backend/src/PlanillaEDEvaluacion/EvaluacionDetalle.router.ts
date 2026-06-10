@@ -4,6 +4,8 @@ import { ItemModel } from '../comunes/items/items.schema';
 import * as mongoose from 'mongoose';
 import { verifyToken } from '../auth/auth.middleware';
 import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import { authorizeRoles } from '../auth/role.middleware';
+import { PERMISOS } from '../auth/roles.constanst';
 
 const router = Router();
 
@@ -16,7 +18,7 @@ type AgenteSimple = {
 
 
 //  Corregir IDs de ítems
-router.put('/corregir-items/:id', verifyToken, async (req: Request, res: Response) => {
+router.put('/corregir-items/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
@@ -48,7 +50,7 @@ router.put('/corregir-items/:id', verifyToken, async (req: Request, res: Respons
 });
 
 // Verificar existencia
-router.get('/existe/:idCabecera/:idAgente', verifyToken, async (req, res) => {
+router.get('/existe/:idCabecera/:idAgente', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const { idCabecera, idAgente } = req.params;
 
@@ -69,7 +71,7 @@ router.get('/existe/:idCabecera/:idAgente', verifyToken, async (req, res) => {
 });
 
 // Obtener por cabecera
-router.get('/por-cabecera/:idCabecera', verifyToken, async (req, res) => {
+router.get('/por-cabecera/:idCabecera', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const { idCabecera } = req.params;
 
@@ -92,7 +94,7 @@ router.get('/por-cabecera/:idCabecera', verifyToken, async (req, res) => {
 });
 
 // Agentes por cabecera
-router.get('/por-cabecera/:idCabecera/agentes', verifyToken, async (req, res) => {
+router.get('/por-cabecera/:idCabecera/agentes', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const { idCabecera } = req.params;
 
@@ -121,7 +123,7 @@ router.get('/por-cabecera/:idCabecera/agentes', verifyToken, async (req, res) =>
 });
 
 // categorías + ítems por cabecera y agente
-router.get('/categorias-items/:idEvaluacion/:idAgente', verifyToken, async (req, res) => {
+router.get('/categorias-items/:idEvaluacion/:idAgente', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const { idEvaluacion, idAgente } = req.params;
 
@@ -146,7 +148,7 @@ router.get('/categorias-items/:idEvaluacion/:idAgente', verifyToken, async (req,
 });
 
 //  Actualizar tipo de cierre
-router.put('/:idCabecera/agente/:idAgente/tipo-cierreCabecera', verifyToken, async (req, res) => {
+router.put('/:idCabecera/agente/:idAgente/tipo-cierreCabecera', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const { idCabecera, idAgente } = req.params;
         const { tipoCierreEvaluacion } = req.body;
@@ -178,12 +180,10 @@ router.put('/:idCabecera/agente/:idAgente/tipo-cierreCabecera', verifyToken, asy
     }
 });
 
-/* ======================================================
-   CRUD GENÉRICO (SIEMPRE AL FINAL)
-====================================================== */
+
 
 // POST
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const nueva = new EvaluacionDetalleModel(req.body);
         const guardada = await nueva.save();
@@ -195,7 +195,7 @@ router.post('/', verifyToken, async (req, res) => {
 });
 
 // GET by ID
-router.get('/:id', verifyToken, async (req, res) => {
+router.get('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return errorResponse(res, 'ID inválido', 400);
@@ -215,7 +215,7 @@ router.get('/:id', verifyToken, async (req, res) => {
 });
 
 // PUT by ID
-router.put('/:id', verifyToken, async (req, res) => {
+router.put('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return errorResponse(res, 'ID inválido', 400);
@@ -239,7 +239,7 @@ router.put('/:id', verifyToken, async (req, res) => {
 });
 
 // DELETE by ID
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return errorResponse(res, 'ID inválido', 400);

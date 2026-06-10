@@ -81,6 +81,11 @@ export class AgentesService {
     }
 
     obtenerTodosAgentes(): Observable<any> {
+        console.log('TOKEN FRONT:',
+            localStorage.getItem('token')
+        );
+
+        console.log('LLAMANDO API AGENTES');
         return this.http.get<any>(`${this.apiUrl}/rAgentes`)
             .pipe(catchError(this.manejarError));
     }

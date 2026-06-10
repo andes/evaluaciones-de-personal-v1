@@ -3,11 +3,13 @@ import { ServicioModel } from '../Schemas/servicios';
 import { verifyToken } from '../../../auth/auth.middleware';
 import { successResponse, errorResponse } from '../../../Utilidades/apiResponse';
 import * as mongoose from 'mongoose';
+import { authorizeRoles } from '../../../auth/role.middleware';
+import { PERMISOS } from '../../../auth/roles.constanst';
 
 const router = Router();
 
 
-router.get('/rmServicios', verifyToken, async (_req: Request, res: Response) => {
+router.get('/rmServicios', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (_req: Request, res: Response) => {
     try {
 
         const servicios = await ServicioModel
@@ -29,7 +31,7 @@ router.get('/rmServicios', verifyToken, async (_req: Request, res: Response) => 
 
 
 
-router.get('/rmServicios/:id', verifyToken, async (req: Request, res: Response) => {
+router.get('/rmServicios/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req: Request, res: Response) => {
     try {
 
         const { id } = req.params;
@@ -58,7 +60,7 @@ router.get('/rmServicios/:id', verifyToken, async (req: Request, res: Response) 
 });
 
 
-router.post('/rmServicios', verifyToken, async (req: Request, res: Response) => {
+router.post('/rmServicios', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req: Request, res: Response) => {
     try {
 
         const { descripcion } = req.body;
@@ -100,7 +102,7 @@ router.post('/rmServicios', verifyToken, async (req: Request, res: Response) => 
 });
 
 
-router.put('/rmServicios/:id', verifyToken, async (req: Request, res: Response) => {
+router.put('/rmServicios/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req: Request, res: Response) => {
     try {
 
         const { id } = req.params;
@@ -156,7 +158,7 @@ router.put('/rmServicios/:id', verifyToken, async (req: Request, res: Response) 
 
 
 
-router.delete('/rmServicios/:id', verifyToken, async (req: Request, res: Response) => {
+router.delete('/rmServicios/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req: Request, res: Response) => {
     try {
 
         const { id } = req.params;

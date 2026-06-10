@@ -116,11 +116,71 @@ router.put('/:id', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
+//put servicios agrega servcios al usuario
+router.put('/:id/servicios', async (req: Request, res: Response) => {
+  console.log('BODY:', JSON.stringify(req.body, null, 2));
+  console.log('SERVICIOS:', JSON.stringify(req.body.servicios, null, 2));
+  try {
+
+    const { id } = req.params;
+
+    console.log('BODY:', req.body);
+
+    if (!req.body) {
+      return res.status(400).json({
+        success: false,
+        message: 'Body undefined'
+      });
+    }
+
+    console.log('SERVICIOS:', req.body.servicios);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return errorResponse(res, 'ID inválido', 400);
+    }
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return errorResponse(res, 'Usuario no encontrado', 404);
+    }
+
+    user.set({
+      servicios: req.body.servicios || []
+    });
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Servicios actualizados correctamente',
+      user
+    });
+
+  } catch (error: any) {
+
+
+    console.log(error);
+    console.log('MESSAGE:', error?.message);
+    console.log('STACK:', error?.stack);
+    console.log('========================================');
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error al actualizar servicios',
+      error: error?.message || error
+    });
+  }
+
+});
+
+
 
 /**
  * Eliminar usuario
  */
 router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
+
   try {
 
     const { id } = req.params;

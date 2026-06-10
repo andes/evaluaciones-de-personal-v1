@@ -45,6 +45,8 @@ export const verifyToken = (
             process.env.JWT_SECRET as string
         ) as JwtPayload;
 
+        console.log('TOKEN DECODIFICADO:', decoded);
+
         req.user = decoded;
 
         next();

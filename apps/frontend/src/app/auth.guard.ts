@@ -13,12 +13,22 @@ export class AuthGuard implements CanActivate {
     ) { }
 
     canActivate(): boolean {
-        const rolUsuario = (this.authService.getRol() || '').trim().toLowerCase();
 
+        const rolUsuario =
+            (this.authService.getRol() || '')
+                .trim()
+                .toLowerCase();
 
-        if (rolUsuario === 'administrador') {
+        const rolesPermitidos = [
+            'administrador',
+            'director',
+            'evaluador'
+        ];
+
+        if (rolesPermitidos.includes(rolUsuario)) {
 
             return true;
+
         } else {
 
             Swal.fire({
@@ -29,6 +39,7 @@ export class AuthGuard implements CanActivate {
             }).then(() => {
                 this.router.navigate(['/menu']);
             });
+
             return false;
         }
     }

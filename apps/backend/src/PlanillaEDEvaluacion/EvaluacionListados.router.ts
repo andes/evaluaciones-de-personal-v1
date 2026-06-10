@@ -4,13 +4,18 @@ import { PlanillaEvaluacionCabeceraModel } from '../PlanillaEDEvaluacion/Evaluac
 import { EvaluacionDetalleModel } from './EvaluacionDetalle.schema';
 import { verifyToken } from '../auth/auth.middleware';
 import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import { authorizeRoles } from '../auth/role.middleware';
+import { PERMISOS } from '../auth/roles.constanst';
+import { User } from '../users/user.schema';
 
 const router = Router();
 
 
 // grilla resumen
-router.get('/evaluaciones-resumen', verifyToken, async (_req: Request, res: Response) => {
+router.get('/evaluaciones-resumen', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (_req: Request, res: Response) => {
+    console.log('REQ KEYS:', Object.keys(_req));
     try {
+
 
         const data = await EvaluacionDetalleModel.aggregate([
             {
@@ -50,45 +55,18 @@ router.get('/evaluaciones-resumen', verifyToken, async (_req: Request, res: Resp
 
 
 // todas las evaluaciones
-router.get('/evaluacioneslisttodas', verifyToken, async (_req: Request, res: Response) => {
-    try {
+router.get('/evaluacioneslisttodas', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES),
 
-        const data = await EvaluacionDetalleModel.aggregate([
-            {
-                $lookup: {
-                    from: 'planilla_evaluacion_cabecera',
-                    localField: 'idPlanillaEvaluacionCabecera',
-                    foreignField: '_id',
-                    as: 'cabecera'
-                }
-            },
-            { $unwind: '$cabecera' },
-            {
-                $project: {
-                    _id: 0,
-                    agenteEvaluado: 1,
-                    periodo: '$cabecera.periodo',
-                    agenteEvaluador: '$cabecera.agenteevaluador',
-                    efector: '$cabecera.Efector',
-                    servicio: '$cabecera.Servicio',
-                    tipoCierreEvaluacion: 1
-                }
-            },
-            { $sort: { 'agenteEvaluado.nombreAgenteEvaluado': 1, periodo: -1 } }
-        ]);
-
-        return successResponse(res, data, 'Evaluaciones obtenidas correctamente');
-
-    } catch {
-
-        return errorResponse(res, 'Error interno', 500);
-
+    async (req: Request, res: Response) => {
+        console.log('ENTRO A LA RUTA');
+        console.log('ENTRO A evaluacioneslisttodas');
+        throw new Error('PRUEBA LUMO');
     }
-});
+);
 
 
 
-router.get('/buscar-agente', verifyToken, async (req: Request, res: Response) => {
+router.get('/buscar-agente', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
 
         const { legajo, nombre } = req.query;
@@ -135,7 +113,7 @@ router.get('/buscar-agente', verifyToken, async (req: Request, res: Response) =>
 });
 
 
-router.get('/buscar-evaluador', verifyToken, async (req: Request, res: Response) => {
+router.get('/buscar-evaluador', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
 
         const { idUsuario, nombre } = req.query;
@@ -186,7 +164,7 @@ router.get('/buscar-evaluador', verifyToken, async (req: Request, res: Response)
 
 
 // por agente
-router.get('/evaluaciones/por-agente/:idAgente', verifyToken, async (req: Request, res: Response) => {
+router.get('/evaluaciones/por-agente/:idAgente', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     const { idAgente } = req.params;
 
@@ -225,7 +203,7 @@ router.get('/evaluaciones/por-agente/:idAgente', verifyToken, async (req: Reques
 
 
 // por tipo de cierre
-router.get('/por-tipo-cierre/:idTipoCierre', verifyToken, async (req: Request, res: Response) => {
+router.get('/por-tipo-cierre/:idTipoCierre', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     const { idTipoCierre } = req.params;
 
@@ -252,7 +230,7 @@ router.get('/por-tipo-cierre/:idTipoCierre', verifyToken, async (req: Request, r
 
 
 // evaluación completa
-router.get('/evaluacion-completa/:idCabecera', verifyToken, async (req: Request, res: Response) => {
+router.get('/evaluacion-completa/:idCabecera', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
     const { idCabecera } = req.params;
 

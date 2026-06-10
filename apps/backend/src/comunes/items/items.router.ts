@@ -3,11 +3,13 @@ import mongoose from 'mongoose';
 import { ItemModel } from './items.schema';
 import { verifyToken } from '../../auth/auth.middleware';
 import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
+import { authorizeRoles } from '../../auth/role.middleware';
+import { PERMISOS } from '../../auth/roles.constanst';
 
 const router = Router();
 
 
-router.get('/rEvaDesemp', verifyToken, async (_req, res) => {
+router.get('/rEvaDesemp', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (_req, res) => {
     try {
         const data = await ItemModel.find().lean();
         return successResponse(res, data, 'Ítems obtenidos correctamente');
@@ -17,7 +19,7 @@ router.get('/rEvaDesemp', verifyToken, async (_req, res) => {
     }
 });
 
-router.get('/rEvaDesemp/:id', verifyToken, async (req, res) => {
+router.get('/rEvaDesemp/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -39,7 +41,7 @@ router.get('/rEvaDesemp/:id', verifyToken, async (req, res) => {
 });
 
 
-router.post('/rEvaDesemp', verifyToken, async (req, res) => {
+router.post('/rEvaDesemp', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         if (!req.body || Object.keys(req.body).length === 0) {
             return errorResponse(res, 'Datos inválidos', 400);
@@ -55,7 +57,7 @@ router.post('/rEvaDesemp', verifyToken, async (req, res) => {
 });
 
 
-router.put('/rEvaDesemp/:id', verifyToken, async (req, res) => {
+router.put('/rEvaDesemp/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -83,7 +85,7 @@ router.put('/rEvaDesemp/:id', verifyToken, async (req, res) => {
     }
 });
 
-router.delete('/rEvaDesemp/:id', verifyToken, async (req, res) => {
+router.delete('/rEvaDesemp/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
         const { id } = req.params;
 
