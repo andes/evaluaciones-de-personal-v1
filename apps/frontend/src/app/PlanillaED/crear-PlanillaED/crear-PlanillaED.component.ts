@@ -7,6 +7,7 @@ import { HeaderComponent } from '../../header/header.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
+import { HeaderSistemaComponent } from '../../header/header-sistema.component';
 
 
 @Component({
@@ -41,8 +42,8 @@ export class CrearPlanillaEDComponent implements OnInit {
     }
 
     cargarTiposEvaluacion() {
-        this._tipoEvaluacionService.obtenerTipos().subscribe((data: TipoEvaluacion[]) => {
-            this.tiposEvaluacion = data;
+        this._tipoEvaluacionService.obtenerTipos().subscribe((resp: any) => {
+            this.tiposEvaluacion = resp.data;
         });
     }
 
@@ -78,7 +79,7 @@ export class CrearPlanillaEDComponent implements OnInit {
                     confirmButtonText: 'Aceptar'
                 });
 
-                this.router.navigate([`/crearplanillaItems/${response._id}`], {
+                this.router.navigate([`/crearplanillaItems/${response.data._id}`], {
                     queryParams: {
                         descripcion: nuevaPlanilla.descripcion
                     }

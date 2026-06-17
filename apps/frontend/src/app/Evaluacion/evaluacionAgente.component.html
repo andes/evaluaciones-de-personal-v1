@@ -1,6 +1,7 @@
 <div class="d-flex flex-column align-items-center mb-4">
     <app-header></app-header>
 </div>
+<app-header-sistema></app-header-sistema>
 
 <div class="d-flex justify-content-center mt-4">
     <div class="col-lg-9 col-md-10 col-12 contenedor-listado">
@@ -113,6 +114,7 @@
 
                                     <tbody>
                                         <tr *ngFor="let agente of agentesYaEvaluados">
+
                                             <!-- ID oculto -->
                                             <td class="oculto text-center">
                                                 {{ agente.idPlanillaEvaluacionCabecera || idCabecera }}
@@ -144,12 +146,14 @@
                                                 <button class="btn btn-sm"
                                                         [ngClass]="agente.cerrado ? 'btn-outline-secondary' : 'btn-outline-danger'"
                                                         (click)="abrirModalCerrar(
-                                                agente.idPlanillaEvaluacionCabecera || idCabecera,
-                                                agente.idAgenteEvaluado,
-                                                agente.nombreAgenteEvaluado
-                                              )" [disabled]="agente.cerrado">
+    agente.idPlanillaEvaluacionCabecera || idCabecera,
+    agente.idAgenteEvaluado,
+    agente.nombreAgenteEvaluado
+)" [disabled]="agente.cerrado">
+
                                                     <i
                                                        [ngClass]="agente.cerrado ? 'fas fa-lock' : 'fas fa-lock-open'"></i>
+
                                                 </button>
                                             </td>
 
@@ -162,6 +166,9 @@
                                                 </button>
                                             </td>
                                         </tr>
+
+
+
 
                                         <!-- Mensaje si no hay agentes -->
                                         <tr *ngIf="!agentesYaEvaluados?.length">

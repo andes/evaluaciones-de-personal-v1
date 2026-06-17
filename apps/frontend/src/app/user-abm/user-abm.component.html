@@ -32,7 +32,7 @@
                                         <th>Nombre</th>
                                         <th>Email</th>
                                         <th>Rol</th>
-                                        <th class="text-center">Acciones</th>
+                                        <th class="text-center"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -41,15 +41,24 @@
                                         <td>{{ u.nombre }}</td>
                                         <td>{{ u.email }}</td>
                                         <td>{{ u.rol }}</td>
+
                                         <td class="text-center">
+
                                             <button class="btn btn-primary btn-sm me-2" (click)="abrirModal(u)"
                                                     title="Editar">
                                                 <i class="fas fa-pen"></i>
                                             </button>
+
+                                            <button class="btn btn-warning btn-sm me-2" (click)="abrirModalServicios(u)"
+                                                    title="Asignar Servicios">
+                                                <i class="fas fa-briefcase"></i>
+                                            </button>
+
                                             <button class="btn btn-danger btn-sm" (click)="eliminarUsuario(u._id)"
                                                     title="Eliminar">
                                                 <i class="fas fa-trash"></i>
                                             </button>
+
                                         </td>
                                     </tr>
                                 </tbody>
@@ -103,11 +112,14 @@
                         <label for="rol" class="form-label">Rol</label>
                         <select id="rol" name="rol" class="form-select" [(ngModel)]="nuevoUsuario.rol"
                                 [ngClass]="{ 'is-invalid': formUsuario.submitted && !nuevoUsuario.rol }" required>
-                            <option value="" disabled [selected]="!nuevoUsuario.rol">Seleccione un rol</option>
+
+                            <option value="" disabled>Seleccione un rol</option>
+
                             <option value="administrador">Administrador</option>
+                            <option value="director">Director</option>
+                            <option value="evaluador">Evaluador</option>
                             <option value="usuario">Usuario</option>
-                            <option value="lectura">Lectura</option>
-                            <option value="externo">Externo</option>
+
                         </select>
                         <div *ngIf="formUsuario.submitted && !nuevoUsuario.rol" class="invalid-feedback">
                             Seleccione un rol.
@@ -125,4 +137,146 @@
                 </form>
             </div>
         </div>
+    </div>
+
+    <div *ngIf="mostrarModalServicios" class="modal-overlay">
+
+        <div class="modal-custom">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Asignación de Servicios
+                </h5>
+
+                <button type="button" class="btn-close" (click)="cerrarModalServicios()">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Usuario -->
+                <div class="mb-2">
+                    <strong>Usuario:</strong>
+                    {{ usuarioSeleccionado?.nombre }}
+                </div>
+
+                <!-- DNI -->
+                <div class="mb-3">
+                    <strong>DNI:</strong>
+                    {{ usuarioSeleccionado?.dni }}
+                </div>
+
+                <!-- Servicio -->
+                <div class="row align-items-end mb-3">
+
+                    <div class="col-md-9">
+
+                        <label class="form-label">
+                            Servicio
+                        </label>
+
+                        <select class="form-select" [(ngModel)]="servicioSeleccionado"
+                                (ngModelChange)="cambioServicio($event)">
+
+                            <option value="">
+                                Seleccione un servicio
+                            </option>
+
+                            <option *ngFor="let s of servicios" [value]="s._id">
+
+                                {{ s.descripcion }}
+
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <button class="btn btn-success w-100" (click)="agregarServicio()">
+
+                            <i class="fas fa-plus me-1"></i>
+                            Agregar
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <hr>
+
+                <!-- Grilla -->
+                <h6 class="mb-3">
+                    Servicios Asignados
+                </h6>
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover">
+
+                        <thead class="table-light">
+
+                            <tr>
+                                <th>Servicio</th>
+                                <th width="80" class="text-center">
+                                    Acción
+                                </th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <tr *ngIf="serviciosAsignados.length === 0">
+
+                                <td colspan="2" class="text-center text-muted">
+
+                                    No hay servicios asignados
+
+                                </td>
+
+                            </tr>
+
+                            <tr *ngFor="let servicio of serviciosAsignados">
+
+                                <td>
+                                    {{ servicio.descripcion }}
+                                </td>
+
+                                <td class="text-center">
+
+                                    <button class="btn btn-sm btn-danger" type="button">
+
+                                        <i class="fas fa-trash"></i>
+
+                                    </button>
+
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button class="btn btn-secondary" (click)="cerrarModalServicios()">
+
+                    Cerrar
+
+                </button>
+
+            </div>
+
+        </div>
+
     </div>

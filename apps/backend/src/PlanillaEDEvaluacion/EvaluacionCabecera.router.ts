@@ -1,39 +1,32 @@
 import { Router, Request, Response } from 'express';
 import { PlanillaEvaluacionCabeceraModel } from '../PlanillaEDEvaluacion/EvaluacionCabecera.schema';
 import * as mongoose from 'mongoose';
-
 import { ServicioModel } from '../comunes/Servicios/Schemas/servicios';
 import { EfectorModel } from '../comunes/Efectores/schemas/efectores';
-import { TipoCierreEvaluacionModel } from '../comunes/tipoCierreEvaluacion/TipoCierreEvaluacion.schema';
+import { verifyToken } from '../auth/auth.middleware';
+import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import { authorizeRoles } from '../auth/role.middleware';
+import { PERMISOS } from '../auth/roles.constanst';
 
 const router = Router();
 
-/* ============================================================
-   1) RUTA: CREAR CABECERA
-   ============================================================ */
-router.post('/planillaedcabecera', async (req: Request, res: Response) => {
-    try {
-        const {
-            periodo,
-            agenteevaluador,
-            Efector,
-            Servicio,
-            usuario
-        } = req.body;
 
-        // Validación de campos obligatorios
+// CREAR CABECERA
+
+router.post('/', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+    try {
+
+        const { periodo, agenteevaluador, Efector, Servicio, usuario } = req.body;
+
         if (!periodo || !agenteevaluador || !Efector || !Servicio || !usuario) {
-            return res.status(400).json({
-                success: false,
-                message: 'Faltan campos requeridos'
-            });
+            return errorResponse(res, 'Faltan campos requeridos', 400);
         }
 
-        // Obtener nombres de efector y servicio desde DB (para mostrar)
         const efectorDB = await EfectorModel.findById(Efector.idEfector).lean();
         const servicioDB = await ServicioModel.findById(Servicio.idServicio).lean();
 
         const nuevaCabecera = new PlanillaEvaluacionCabeceraModel({
+
             periodo: new Date(periodo),
 
             agenteevaluador: {
@@ -52,7 +45,9 @@ router.post('/planillaedcabecera', async (req: Request, res: Response) => {
             },
 
             fechaCierre: new Date('1900-01-01'),
+
             usuario,
+
             fechaMod: new Date(),
 
             tipoCierreEvaluacion: {
@@ -63,201 +58,148 @@ router.post('/planillaedcabecera', async (req: Request, res: Response) => {
 
         const cabeceraGuardada = await nuevaCabecera.save();
 
-        res.status(201).json({
-            success: true,
-            data: cabeceraGuardada,
-            message: 'Cabecera de evaluación creada exitosamente'
-        });
+        return successResponse(res, cabeceraGuardada, 'Cabecera creada', 201);
 
-    } catch (error) {
-        console.error('Error al crear cabecera:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al crear cabecera',
-            error: error instanceof Error ? error.message : error
-        });
+    } catch {
+        return errorResponse(res, 'Error al crear cabecera', 500);
     }
 });
 
 
 
+// VERIFICAR SI EXISTE
 
-/* ============================================================
-   2) RUTA: VERIFICAR SI EXISTE CABECERA
-   ============================================================ */
-router.post('/planillaedcabecera/existe', async (req: Request, res: Response) => {
+router.post('/existe', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
+
         const { periodo, agenteevaluador, Efector, Servicio } = req.body;
 
         if (!periodo || !agenteevaluador || !Efector || !Servicio) {
-            return res.status(400).json({
-                success: false,
-                message: 'Faltan campos requeridos'
-            });
+            return errorResponse(res, 'Faltan campos requeridos', 400);
         }
 
         const existeCabecera = await PlanillaEvaluacionCabeceraModel.findOne({
+
             periodo: new Date(periodo),
-            'agenteevaluador.idUsuarioEvaluador': new mongoose.Types.ObjectId(agenteevaluador.idUsuarioEvaluador),
+
+            'agenteevaluador.idUsuarioEvaluador':
+                new mongoose.Types.ObjectId(agenteevaluador.idUsuarioEvaluador),
+
             'Efector.idEfector': Efector.idEfector,
+
             'Servicio.idServicio': Servicio.idServicio
+
         });
 
-        return res.status(200).json({
-            success: true,
+        return successResponse(res, {
+
             existe: !!existeCabecera,
             data: existeCabecera || null
+
         });
 
-    } catch (error) {
-        console.error('Error al verificar cabecera:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno al verificar',
-            error
-        });
+    } catch {
+
+        return errorResponse(res, 'Error al verificar cabecera', 500);
+
     }
 });
 
-/* ============================================================
-   3) RUTA: BUSCAR POR USUARIO EVALUADOR
-   ============================================================ */
-router.get('/planillaedcabecera/buscar', async (req: Request, res: Response) => {
+
+
+//  BUSCAR CABECERAS POR EVALUADOR
+
+router.get('/buscar', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
+
         const { idUsuarioEvaluador } = req.query;
 
         if (!idUsuarioEvaluador) {
-            return res.status(400).json({
-                success: false,
-                message: 'Falta idUsuarioEvaluador'
-            });
+            return errorResponse(res, 'Falta idUsuarioEvaluador', 400);
         }
 
         const cabeceras = await PlanillaEvaluacionCabeceraModel.find({
-            'agenteevaluador.idUsuarioEvaluador': new mongoose.Types.ObjectId(idUsuarioEvaluador as string)
+            'agenteevaluador.idUsuarioEvaluador':
+                new mongoose.Types.ObjectId(idUsuarioEvaluador as string)
         }).sort({ periodo: 1 });
 
-        res.status(200).json({
-            success: true,
-            total: cabeceras.length,
-            data: cabeceras
-        });
+        return successResponse(res, cabeceras);
 
-    } catch (error) {
-        console.error('Error buscar cabeceras:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al buscar cabeceras',
-            error
-        });
+    } catch {
+
+        return errorResponse(res, 'Error al buscar cabeceras', 500);
+
     }
 });
 
-/* ============================================================
-   4) GET CABECERA POR ID (IMPORTANTE: ANTES QUE '/')
-   ============================================================ */
-router.get('/:id', async (req: Request, res: Response) => {
+
+//  OBTENER UNA CABECERA
+
+router.get('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
+
         const { id } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: 'ID inválido' });
+            return errorResponse(res, 'ID inválido', 400);
         }
 
         const cabecera = await PlanillaEvaluacionCabeceraModel.findById(id);
 
         if (!cabecera) {
-            return res.status(404).json({ success: false, message: 'Cabecera no encontrada' });
+            return errorResponse(res, 'Cabecera no encontrada', 404);
         }
 
-        res.status(200).json({
-            success: true,
-            data: cabecera
-        });
+        return successResponse(res, cabecera);
 
-    } catch (error) {
-        console.error('Error obtener cabecera:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno',
-            error
-        });
+    } catch {
+
+        return errorResponse(res, 'Error interno', 500);
+
     }
 });
 
-/* ============================================================
-   5) ELIMINAR CABECERA POR ID
-   ============================================================ */
-router.delete('/evaluacioncabecera/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
 
-        const cabeceraEliminada = await PlanillaEvaluacionCabeceraModel.findByIdAndDelete(id);
+
+// ELIMINAR CABECERA
+
+router.delete('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
+    try {
+
+        const cabeceraEliminada =
+            await PlanillaEvaluacionCabeceraModel.findByIdAndDelete(req.params.id);
 
         if (!cabeceraEliminada) {
-            return res.status(404).json({
-                success: false,
-                message: 'Cabecera no encontrada'
-            });
+            return errorResponse(res, 'Cabecera no encontrada', 404);
         }
 
-        res.status(200).json({
-            success: true,
-            message: 'Cabecera eliminada'
-        });
+        return successResponse(res, null, 'Cabecera eliminada');
 
-    } catch (error) {
-        console.error('Error eliminar cabecera:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno',
-            error
-        });
+    } catch {
+
+        return errorResponse(res, 'Error al eliminar', 500);
+
     }
 });
 
-/* ============================================================
-   6) ELIMINAR TODAS LAS CABECERAS
-   ============================================================ */
-router.delete('/evaluacioncabecera', async (req: Request, res: Response) => {
+
+
+router.get('/', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (_req: Request, res: Response) => {
+
     try {
-        const resultado = await PlanillaEvaluacionCabeceraModel.deleteMany({});
 
-        res.status(200).json({
-            success: true,
-            message: 'Todas las cabeceras eliminadas',
-            deleted: resultado.deletedCount
-        });
-
-    } catch (error) {
-        console.error('Error eliminar todas:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno',
-            error
-        });
-    }
-});
-
-/* ============================================================
-   7) RUTA GENERAL (VA SIEMPRE AL FINAL)
-   ============================================================ */
-router.get('/', async (_req: Request, res: Response) => {
-    try {
         const cabeceras = await PlanillaEvaluacionCabeceraModel.find();
 
-        res.status(200).json({
-            success: true,
-            data: cabeceras
-        });
+        return successResponse(res, cabeceras);
 
-    } catch (error) {
-        console.error('Error obtener cabeceras:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error interno',
-            error
-        });
+    } catch {
+
+        return errorResponse(res, 'Error al obtener cabeceras', 500);
+
     }
 });
 

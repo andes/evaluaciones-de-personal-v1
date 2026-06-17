@@ -18,7 +18,9 @@ export interface ApiResponse<T = any> {
 })
 export class EvaluacionResultadosService {
 
-    private baseUrl = 'http://localhost:3000/api/evaluacionItems';
+    //private baseUrl = 'http://localhost:3000/api/evaluacionItems';
+    private baseUrl = 'http://localhost:3000/api/evaluacionresultados/evaluacionItems';
+
 
     constructor(private http: HttpClient) { }
 

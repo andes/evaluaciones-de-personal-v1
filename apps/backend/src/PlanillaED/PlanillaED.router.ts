@@ -2,48 +2,53 @@ import { Router, Request, Response } from 'express';
 import { PlanillaEDModel } from '../PlanillaED/PlanillaED.schema';
 import { ItemModel } from '../comunes/items/items.schema';
 import mongoose from 'mongoose';
+import { verifyToken } from '../auth/auth.middleware';
+import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import { authorizeRoles } from '../auth/role.middleware';
+import { PERMISOS } from '../auth/roles.constanst';
+import { User } from '../users/user.schema';
 
 const router = Router();
 
-/* ============================================================
-   RUTAS DE BÚSQUEDA
-============================================================ */
 
-// Buscar por efector y servicio
-router.get('/buscar-por-efector-servicio', async (req: Request, res: Response) => {
+
+router.get('/buscar-por-efector-servicio', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
-        let { idEfector, idServicio } = req.query;
 
-        if (!mongoose.Types.ObjectId.isValid(String(idEfector)) ||
-            !mongoose.Types.ObjectId.isValid(String(idServicio))) {
-            return res.status(400).json({ message: 'IDs inválidos' });
+        const { idEfector, idServicio } = req.query;
+
+        if (
+            !mongoose.Types.ObjectId.isValid(String(idEfector)) ||
+            !mongoose.Types.ObjectId.isValid(String(idServicio))
+        ) {
+            return errorResponse(res, 'IDs inválidos', 400);
         }
 
-        const planilla = await PlanillaEDModel.findOne({
-            idEfector,
-            idServicio
-        })
+        const planilla = await PlanillaEDModel.findOne({ idEfector, idServicio })
             .populate('idEfector', 'nombre')
             .populate('idServicio', 'nombre')
             .populate('categorias.categoria', 'descripcion')
             .lean();
 
-        if (!planilla) return res.status(404).json({ message: 'Planilla no encontrada' });
+        if (!planilla)
+            return errorResponse(res, 'Planilla no encontrada', 404);
 
-        res.json(planilla);
-    } catch (error) {
-        res.status(500).json({ message: 'Error interno', error });
+        return successResponse(res, planilla);
+
+    } catch {
+        return errorResponse(res, 'Error interno del servidor', 500);
     }
 });
 
-// Buscar por tipo evaluación
-router.get('/buscar-por-tipo-evaluacion/:idTipoEvaluacion', async (req: Request, res: Response) => {
+
+router.get('/buscar-por-tipo-evaluacion/:idTipoEvaluacion', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
+
         const { idTipoEvaluacion } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(idTipoEvaluacion)) {
-            return res.status(400).json({ message: 'ID de tipo de evaluación inválido' });
-        }
+        if (!mongoose.Types.ObjectId.isValid(idTipoEvaluacion))
+            return errorResponse(res, 'ID inválido', 400);
 
         const planilla = await PlanillaEDModel.findOne({
             'tipoEvaluacion.idTipoEvaluacion': idTipoEvaluacion
@@ -53,141 +58,182 @@ router.get('/buscar-por-tipo-evaluacion/:idTipoEvaluacion', async (req: Request,
             .populate('categorias.categoria', 'descripcion')
             .lean();
 
-        if (!planilla) {
-            return res.status(404).json({
-                message: 'No se encontró planilla para ese tipo de evaluación'
-            });
-        }
+        if (!planilla)
+            return errorResponse(res, 'No se encontró planilla', 404);
 
-        res.json(planilla);
-    } catch (error) {
-        res.status(500).json({ message: 'Error al buscar por tipoEvaluacion', error });
+        return successResponse(res, planilla);
+
+    } catch {
+        return errorResponse(res, 'Error interno', 500);
     }
 });
 
 
 
-// Obtener categorías
-router.get('/:id/categorias', async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
 
-        const planilla: any = await PlanillaEDModel
-            .findById(id)
+router.get('/:idPlanilla/categorias/:idCategoria/items', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
+    try {
+
+        const { idPlanilla, idCategoria } = req.params;
+
+        if (
+            !mongoose.Types.ObjectId.isValid(idPlanilla) ||
+            !mongoose.Types.ObjectId.isValid(idCategoria)
+        ) {
+            return errorResponse(res, 'IDs inválidos', 400);
+        }
+
+        const planilla: any = await PlanillaEDModel.findById(idPlanilla).lean();
+
+        if (!planilla)
+            return errorResponse(res, 'Planilla no encontrada', 404);
+
+        const categoria = planilla.categorias.find(
+            (c: any) =>
+                String(c.categoria) === idCategoria ||
+                String(c._id) === idCategoria
+        );
+
+        if (!categoria)
+            return successResponse(res, []);
+
+        return successResponse(res, categoria.items || []);
+
+    } catch (error) {
+
+        console.error(error);
+
+        return errorResponse(res, 'Error al obtener items', 500);
+
+    }
+
+});
+
+
+
+router.get('/:id/categorias', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
+    try {
+
+        const planilla: any = await PlanillaEDModel.findById(req.params.id)
             .populate('categorias.categoria')
             .lean();
 
-        if (!planilla) return res.status(404).json({ message: 'Planilla no encontrada' });
+        if (!planilla)
+            return errorResponse(res, 'Planilla no encontrada', 404);
 
         const resumen = (planilla.categorias || []).map((cat: any) => ({
+
             id: cat?.categoria?._id ?? null,
             descripcion: cat?.categoria?.descripcion ?? '',
             totalItems: Array.isArray(cat?.items) ? cat.items.length : 0
+
         }));
 
-        return res.json({
-            planillaId: id,
+        return successResponse(res, {
+
+            planillaId: req.params.id,
             descripcion: planilla.descripcion,
             categorias: resumen
+
         });
 
-    } catch (error) {
-        return res.status(500).json({ message: 'Error al obtener categorías', error });
+    } catch {
+
+        return errorResponse(res, 'Error al obtener categorías', 500);
+
     }
+
 });
 
-// Ítems disponibles
-router.get('/:idDocumento/items-disponibles', async (req: Request, res: Response) => {
+
+
+router.get('/:idDocumento/items-disponibles', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
-        const { idDocumento } = req.params;
 
-        const planilla: any = await PlanillaEDModel.findById(idDocumento).lean();
-        if (!planilla) return res.status(404).json({ message: 'Planilla no encontrada' });
+        const planilla: any = await PlanillaEDModel.findById(req.params.idDocumento).lean();
 
-        const usados: string[] = planilla.categorias
-            .flatMap((cat: any) =>
-                (cat.items || []).map((item: any) => String(item._id))
-            );
+        if (!planilla)
+            return errorResponse(res, 'Planilla no encontrada', 404);
 
-        const disponibles = await ItemModel.find({ _id: { $nin: usados } })
+        const usados = planilla.categorias.flatMap((c: any) =>
+            (c.items || []).map((i: any) => String(i._id))
+        );
+
+        const disponibles = await ItemModel.find({
+            _id: { $nin: usados }
+        })
             .sort({ descripcion: 1 })
             .lean();
 
-        return res.json({
-            items: disponibles.map((i: any) => ({
-                _id: String(i._id),
-                descripcion: i.descripcion,
-                valor: i.valor
-            }))
-        });
+        return successResponse(res, disponibles);
 
-    } catch (error) {
-        return res.status(500).json({ message: 'Error al obtener items', error });
+    } catch {
+
+        return errorResponse(res, 'Error al obtener items', 500);
+
     }
+
 });
 
-// Verificar existencia de ítem (RUTA ESPECÍFICA — DEBE IR ANTES DEL :id)
-router.get('/:idPlanilla/items/existe', async (req: Request, res: Response) => {
+
+
+router.get('/:idPlanilla/items/existe', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
-        const { idPlanilla } = req.params;
+
         const { itemDesc } = req.query;
 
+        if (!itemDesc || typeof itemDesc !== 'string')
+            return errorResponse(res, 'itemDesc requerido', 400);
 
-        if (!itemDesc || typeof itemDesc !== 'string') {
-            return res.status(400).json({
-                message: 'Parámetro itemDesc requerido y debe ser string'
-            });
-        }
+        const planilla = await PlanillaEDModel.findById(req.params.idPlanilla).lean();
 
-        if (!mongoose.Types.ObjectId.isValid(idPlanilla)) {
-            return res.status(400).json({ message: 'ID de planilla inválido' });
-        }
+        if (!planilla)
+            return errorResponse(res, 'Planilla no encontrada', 404);
 
-        const planilla = await PlanillaEDModel.findById(idPlanilla).lean();
-        if (!planilla) {
-            return res.status(404).json({ message: 'Planilla no encontrada' });
-        }
+        const normalized = itemDesc.toLowerCase().trim();
 
-        if (!Array.isArray(planilla.categorias)) {
-            return res.json({ exists: false });
-        }
-
-        const normalizedDesc = itemDesc.toLowerCase().trim();
         let exists = false;
 
-        for (const cat of planilla.categorias) {
-            if (!Array.isArray(cat.items)) continue;
+        for (const cat of planilla.categorias || []) {
 
-            for (const item of cat.items) {
-                if (typeof item.descripcion !== 'string') continue;
-                if (item.descripcion.toLowerCase().trim() === normalizedDesc) {
+            for (const item of cat.items || []) {
+
+                if (item.descripcion?.toLowerCase().trim() === normalized) {
+
                     exists = true;
                     break;
+
                 }
+
             }
-            if (exists) break;
+
         }
 
+        return successResponse(res, { exists });
 
-        return res.json({ exists });
+    } catch {
 
-    } catch (error) {
-        console.error("🔥 ERROR verificando ítem:", error);
-        return res.status(500).json({
-            message: 'Error al verificar ítem',
-            error: error instanceof Error ? error.message : error
-        });
+        return errorResponse(res, 'Error al verificar ítem', 500);
+
     }
+
 });
 
-// Eliminar item
-router.delete('/eliminar-item', async (req: Request, res: Response) => {
+
+
+
+router.delete('/eliminar-item', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
+
         const { idDocumento, descripcionItem } = req.body;
 
-        if (!idDocumento || !descripcionItem) {
-            return res.status(400).json({ message: 'Faltan parámetros' });
-        }
+        if (!idDocumento || !descripcionItem)
+            return errorResponse(res, 'Faltan parámetros', 400);
 
         const result = await PlanillaEDModel.findOneAndUpdate(
             { _id: idDocumento },
@@ -195,186 +241,196 @@ router.delete('/eliminar-item', async (req: Request, res: Response) => {
             { new: true }
         );
 
-        if (!result) return res.status(404).json({ message: 'Documento no encontrado' });
+        if (!result)
+            return errorResponse(res, 'Documento no encontrado', 404);
 
-        res.json({ message: 'Ítem eliminado', resultado: result });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al eliminar ítem', error });
+        return successResponse(res, result, 'Ítem eliminado');
+
+    } catch {
+
+        return errorResponse(res, 'Error al eliminar', 500);
+
     }
+
 });
 
 
 
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (_req: Request, res: Response) => {
+
     try {
+
         const planillas = await PlanillaEDModel.find()
             .populate('categorias.categoria')
             .populate('idEfector', 'nombre')
             .populate('idServicio', 'nombre')
             .lean();
 
-        planillas.forEach(p => {
-            if (Array.isArray(p.categorias)) {
-                p.categorias.sort((a, b) => a.descripcion.localeCompare(b.descripcion));
-            }
-        });
+        return successResponse(res, planillas);
 
-        res.json(planillas);
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener planillas', error });
+    } catch {
+
+        return errorResponse(res, 'Error al obtener planillas', 500);
+
     }
+
 });
 
 
-router.get('/:planillaId/categorias/:categoriaId/items', async (req: Request, res: Response) => {
+router.post('/', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
-        const { planillaId, categoriaId } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(planillaId) || !mongoose.Types.ObjectId.isValid(categoriaId)) {
-            return res.status(400).json({ message: 'IDs inválidos' });
-        }
-
-        const planilla: any = await PlanillaEDModel.findById(planillaId)
-            .populate('categorias.categoria')
-            .lean();
-
-        if (!planilla) return res.status(404).json({ message: 'Planilla no encontrada' });
-
-        const categoria = planilla.categorias.find((cat: any) => String(cat.categoria._id) === categoriaId);
-
-        if (!categoria) return res.status(404).json({ message: 'Categoría no encontrada en la planilla' });
-
-        res.json({
-            planillaId,
-            categoriaId,
-            items: categoria.items || []
-        });
-    } catch (error) {
-        console.error('Error al obtener items por planilla y categoría:', error);
-        res.status(500).json({ message: 'Error interno', error });
-    }
-});
-
-
-// Crear planilla
-router.post('/', async (req: Request, res: Response) => {
-    try {
-
 
         const { descripcion, tipoEvaluacion } = req.body;
 
-
-
-        // 🔍 CONTROLAR QUE YA EXISTA UNA PLANILLA PARA ESE TIPO
         const existe = await PlanillaEDModel.findOne({
             "tipoEvaluacion.idTipoEvaluacion": tipoEvaluacion.idTipoEvaluacion
         });
 
-        if (existe) {
-            return res.status(400).json({
-                message: 'Ya existe una planilla para este Tipo de Evaluación'
-            });
-        }
+        if (existe)
+            return errorResponse(res, 'Ya existe una planilla', 400);
 
-        // 🔹 CREAR NUEVA PLANILLA
-        const nueva = new PlanillaEDModel({
+        const nueva = await PlanillaEDModel.create({
+
             descripcion,
             fechaCreacion: new Date(),
             tipoEvaluacion,
             categorias: []
+
         });
 
+        return successResponse(res, nueva, 'Planilla creada', 201);
 
+    } catch {
 
-        const guardada = await nueva.save();
-        res.status(201).json(guardada);
+        return errorResponse(res, 'Error al crear planilla', 500);
 
-    } catch (error: any) {
-        console.error("❌ ERROR AL CREAR:", error);
-        res.status(500).json({
-            message: 'Planilla ya existe',
-            error: error.message,
-            errorCompleto: error
-        });
     }
+
 });
 
 
+router.put('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
-
-// Actualizar planilla
-router.put('/:id/categorias', async (req: Request, res: Response) => {
     try {
-        const { categoria, descripcionCategoria, items } = req.body;
-        const { id } = req.params;
 
-        const planilla = await PlanillaEDModel.findById(id);
-        if (!planilla) return res.status(404).json({ message: 'Planilla no encontrada' });
+        const { descripcion, tipoEvaluacion } = req.body;
 
-        const existente = planilla.categorias.find(cat => String(cat.categoria) === String(categoria));
+        if (!descripcion || !tipoEvaluacion)
+            return errorResponse(res, 'Datos incompletos', 400);
 
-        if (existente) {
-            existente.descripcion = descripcionCategoria;
+        const planilla = await PlanillaEDModel.findById(req.params.id);
 
-            const nuevos = items.filter((item: { _id?: string; idItem?: string; descripcion: string; valor: any }) =>
-                !existente.items.some(i => i.descripcion === item.descripcion)
-            );
+        if (!planilla)
+            return errorResponse(res, 'Planilla no encontrada', 404);
 
-            if (nuevos.length > 0) {
-                existente.items.push(...nuevos.map((item: { _id?: string; idItem?: string; descripcion: string; valor: any }) => ({
-                    _id: item._id || item.idItem,
-                    descripcion: item.descripcion,
-                    valor: item.valor
-                })));
-                planilla.markModified('categorias');
-            }
-        } else planilla.categorias.push({
-            categoria,
-            descripcion: descripcionCategoria,
-            items: items.map((item: any) => ({
-                _id: item._id || item.idItem,
-                descripcion: item.descripcion,
-                valor: item.valor
-            }))
+        const existe = await PlanillaEDModel.findOne({
+
+            _id: { $ne: req.params.id },
+            "tipoEvaluacion.idTipoEvaluacion": tipoEvaluacion.idTipoEvaluacion
+
         });
 
+        if (existe)
+            return errorResponse(res, 'Ya existe una planilla con ese tipo', 400);
+
+        planilla.descripcion = descripcion;
+        planilla.tipoEvaluacion = tipoEvaluacion;
 
         await planilla.save();
-        res.json({ message: 'Planilla actualizada', planilla });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al actualizar', error });
+
+        return successResponse(res, planilla, 'Planilla actualizada');
+
+    } catch {
+
+        return errorResponse(res, 'Error al actualizar planilla', 500);
+
     }
+
 });
 
-// Eliminar todas
-router.delete('/', async (_req: Request, res: Response) => {
+
+router.put('/:id/categorias', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
-        const result = await PlanillaEDModel.deleteMany({});
-        res.json({
-            message: 'Planillas eliminadas',
-            deletedCount: result.deletedCount
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al eliminar planillas', error });
+
+        const { categoria, descripcionCategoria, items } = req.body;
+
+        if (!categoria || !descripcionCategoria || !items || !Array.isArray(items))
+            return errorResponse(res, 'Datos inválidos', 400);
+
+        const planilla: any = await PlanillaEDModel.findById(req.params.id);
+
+        if (!planilla)
+            return errorResponse(res, 'Planilla no encontrada', 404);
+
+        const itemNuevo = items[0];
+
+        const categoriaExistente = planilla.categorias.find(
+            (c: any) => String(c.categoria) === String(categoria)
+        );
+
+        if (categoriaExistente) {
+
+            const itemDuplicado = categoriaExistente.items.find(
+                (i: any) =>
+                    i.descripcion.toLowerCase().trim() ===
+                    itemNuevo.descripcion.toLowerCase().trim()
+            );
+
+            if (itemDuplicado)
+                return errorResponse(res, 'El ítem ya existe en esta categoría', 400);
+
+            categoriaExistente.items.push(itemNuevo);
+
+        } else {
+
+            planilla.categorias.push({
+
+                categoria,
+                descripcion: descripcionCategoria,
+                items: [itemNuevo]
+
+            });
+
+        }
+
+        await planilla.save();
+
+        return successResponse(res, planilla, 'Planilla actualizada correctamente');
+
+    } catch {
+
+        return errorResponse(res, 'Error al actualizar', 500);
+
     }
+
 });
 
-// Obtener una planilla (GENÉRICA - ÚLTIMA SIEMPRE)
-router.get('/:id', async (req: Request, res: Response) => {
+
+router.get('/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+
     try {
+
         const planilla = await PlanillaEDModel.findById(req.params.id)
             .populate('idEfector', 'nombre')
             .populate('idServicio', 'nombre')
             .populate('categorias.categoria', 'descripcion')
             .lean();
 
-        if (!planilla) return res.status(404).json({ message: 'Planilla no encontrada' });
+        if (!planilla)
+            return errorResponse(res, 'Planilla no encontrada', 404);
 
-        res.json(planilla);
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener planilla', error });
+        return successResponse(res, planilla);
+
+    } catch {
+
+        return errorResponse(res, 'Error al obtener planilla', 500);
+
     }
+
 });
+
 
 export default router;

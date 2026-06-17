@@ -36,8 +36,11 @@ export class TipoEvaluacionComponent implements OnInit {
 
     cargarTipos(): void {
         this.tipoService.obtenerTipos().subscribe({
-            next: (data) => this.tipos = data,
-            error: () => Swal.fire('❌ Error', 'No se pudieron cargar los tipos de evaluación', 'error')
+            next: (response: any) => {
+                this.tipos = response.data;
+            },
+            error: () =>
+                Swal.fire('Error', 'No se pudieron cargar los tipos de evaluación', 'error')
         });
     }
 

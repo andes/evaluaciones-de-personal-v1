@@ -1,0 +1,53 @@
+.header-sistema {
+    background: #e9ecef;
+    color: #333;
+    border-radius: 10px;
+}
+
+.titulo-sistema {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.usuario-box {
+    background: white;
+    color: #333;
+    padding: 6px 15px;
+    border-radius: 30px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.icono-usuario {
+    font-size: 28px;
+    color: #0d6efd;
+}
+
+.usuario-nombre {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.usuario-rol {
+    font-size: 12px;
+    color: #666;
+}
+
+/* BOTON MENU */
+
+.btn-menu-home {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 20px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.btn-menu-home:hover {
+    background: white;
+    color: #0d6efd;
+}

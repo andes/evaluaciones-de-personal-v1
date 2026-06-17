@@ -54,19 +54,20 @@ export class AgentesComponent implements OnInit {
         this.cargando = true;
 
         this.agentesService.obtenerTodosAgentes().subscribe({
-            next: data => {
-                this.agentes = data;
+            next: (resp: any) => {
+                console.log('RESP AGENTES', resp); // para confirmar estructura
+
+                this.agentes = resp.data;  // ✅ ahora sí es array
                 this.filtrarAgentes();
                 this.cargando = false;
             },
             error: err => {
                 console.error('Error al cargar agentes:', err);
-                Swal.fire('❌ Error', 'No se pudieron cargar los agentes', 'error');
+                Swal.fire(' Error.', 'No se pudieron cargar los agentes', 'error');
                 this.cargando = false;
             }
         });
     }
-
 
 
 

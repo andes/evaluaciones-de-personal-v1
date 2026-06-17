@@ -41,7 +41,9 @@ export class ItemsComponent implements OnInit {
 
     cargarItems(): void {
         this.itemsService.getItems().subscribe({
-            next: (data) => this.items = data,
+            next: (response: any) => {
+                this.items = response.data;
+            },
             error: () => Swal.fire('Error', 'No se pudieron cargar los ítems', 'error')
         });
     }
@@ -71,7 +73,7 @@ export class ItemsComponent implements OnInit {
         if (this.editando && this.itemActual._id) {
             this.itemsService.updateItem(this.itemActual._id, this.itemActual).subscribe({
                 next: () => {
-                    Swal.fire('Ítem actualizado', 'success');
+                    Swal.fire('Ítem actualizado', 'Se actualizo con exito');
                     this.cargarItems();
                     this.cerrarModal();
                 },
@@ -80,7 +82,7 @@ export class ItemsComponent implements OnInit {
         } else {
             this.itemsService.createItem(this.itemActual).subscribe({
                 next: () => {
-                    Swal.fire('Ítem creado', 'success');
+                    Swal.fire('Ítem creado', 'Se creo con exito');
                     this.cargarItems();
                     this.cerrarModal();
                 },

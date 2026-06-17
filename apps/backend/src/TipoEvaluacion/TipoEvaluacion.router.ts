@@ -1,69 +1,142 @@
 import { Router, Request, Response } from 'express';
 import { TipoEvaluacionModel } from './TipoEvaluacion.schema';
+import { verifyToken } from '../auth/auth.middleware';
+import { successResponse, errorResponse } from '../Utilidades/apiResponse';
+import * as mongoose from 'mongoose';
+import { authorizeRoles } from '../auth/role.middleware';
+import { PERMISOS } from '../auth/roles.constanst';
 
 const router = Router();
 
-router.get('/', async (req: Request, res: Response) => {
+
+router.get('/', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (_req: Request, res: Response) => {
     try {
-        const tipos = await TipoEvaluacionModel.find().sort({ nombre: 1 });
-        return res.json(tipos);
+        const tipos = await TipoEvaluacionModel
+            .find()
+            .sort({ nombre: 1 });
+
+        return successResponse(res, tipos, 'Tipos de evaluación obtenidos correctamente', 200);
+
     } catch (error) {
-        console.error('❌ Error al obtener los tipos de evaluación:', error);
-        return res.status(500).json({ error: 'Error al obtener los tipos de evaluación' });
+        console.error('Error GET TipoEvaluacion:', error);
+        return errorResponse(res, 'Error interno al obtener los tipos de evaluación', 500);
     }
 });
 
 
-router.post('/', async (req: Request, res: Response) => {
+router.get('/:id', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
-        // Validar campo obligatorio
-        if (!req.body.nombre || req.body.nombre.trim() === '') {
-            return res.status(400).json({ error: 'El nombre es obligatorio' });
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'ID inválido', 400);
         }
 
-        const nuevoTipo = new TipoEvaluacionModel(req.body);
-        const guardado = await nuevoTipo.save();
+        const tipo = await TipoEvaluacionModel.findById(id);
 
-        return res.status(201).json(guardado);
+        if (!tipo) {
+            return errorResponse(res, 'Tipo de evaluación no encontrado', 404);
+        }
+
+        return successResponse(res, tipo, 'Tipo de evaluación obtenido correctamente', 200);
+
     } catch (error) {
-        console.error('❌ Error al crear tipo de evaluación:', error);
-        return res.status(400).json({ error: 'Error al crear el tipo de evaluación' });
+        console.error('Error GET by ID TipoEvaluacion:', error);
+        return errorResponse(res, 'Error interno al obtener el tipo de evaluación', 500);
     }
 });
 
 
-router.put('/:id', async (req: Request, res: Response) => {
+router.post('/', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
     try {
+        const { nombre, descripcion } = req.body;
+
+        if (!nombre || nombre.trim() === '') {
+            return errorResponse(res, 'El nombre es obligatorio', 400);
+        }
+
+        // Validar duplicado (opcional pero recomendable)
+        const existe = await TipoEvaluacionModel.findOne({ nombre: nombre.trim() });
+
+        if (existe) {
+            return errorResponse(res, 'Ya existe un tipo de evaluación con ese nombre', 409);
+        }
+
+        const nuevoTipo = new TipoEvaluacionModel({
+            nombre: nombre.trim(),
+            descripcion
+        });
+
+        const guardado = await nuevoTipo.save();
+
+        return successResponse(res, guardado, 'Tipo de evaluación creado correctamente', 201);
+
+    } catch (error) {
+        console.error('Error POST TipoEvaluacion:', error);
+        return errorResponse(res, 'Error interno al crear el tipo de evaluación', 500);
+    }
+});
+
+
+
+router.put('/:id', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { nombre, descripcion } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'ID inválido', 400);
+        }
+
+        if (!nombre || nombre.trim() === '') {
+            return errorResponse(res, 'El nombre es obligatorio', 400);
+        }
+
         const actualizado = await TipoEvaluacionModel.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
+            id,
+            {
+                nombre: nombre.trim(),
+                descripcion
+            },
+            {
+                new: true,
+                runValidators: true
+            }
         );
 
         if (!actualizado) {
-            return res.status(404).json({ error: 'Tipo de evaluación no encontrado' });
+            return errorResponse(res, 'Tipo de evaluación no encontrado', 404);
         }
 
-        return res.json(actualizado);
+        return successResponse(res, actualizado, 'Tipo de evaluación actualizado correctamente', 200);
+
     } catch (error) {
-        console.error('❌ Error al actualizar tipo de evaluación:', error);
-        return res.status(400).json({ error: 'Error al actualizar el tipo de evaluación' });
+        console.error('Error PUT TipoEvaluacion:', error);
+        return errorResponse(res, 'Error interno al actualizar el tipo de evaluación', 500);
     }
 });
 
 
-router.delete('/:id', async (req: Request, res: Response) => {
-    try {
-        const eliminado = await TipoEvaluacionModel.findByIdAndDelete(req.params.id);
 
-        if (!eliminado) {
-            return res.status(404).json({ error: 'Tipo de evaluación no encontrado' });
+router.delete('/:id', verifyToken, verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'ID inválido', 400);
         }
 
-        return res.json({ mensaje: 'Tipo de evaluación eliminado correctamente' });
+        const eliminado = await TipoEvaluacionModel.findByIdAndDelete(id);
+
+        if (!eliminado) {
+            return errorResponse(res, 'Tipo de evaluación no encontrado', 404);
+        }
+
+        return successResponse(res, null, 'Tipo de evaluación eliminado correctamente', 200);
+
     } catch (error) {
-        console.error('❌ Error al eliminar tipo de evaluación:', error);
-        return res.status(400).json({ error: 'Error al eliminar el tipo de evaluación' });
+        console.error('Error DELETE TipoEvaluacion:', error);
+        return errorResponse(res, 'Error interno al eliminar el tipo de evaluación', 500);
     }
 });
 

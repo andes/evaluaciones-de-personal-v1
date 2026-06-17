@@ -1,14 +1,19 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { AgenteModel } from './agentes.schema';
 import fs from 'fs';
 import path from 'path';
 import csvParser from 'csv-parser';
 import multer from 'multer';
+import { verifyToken } from '../../auth/auth.middleware';
+import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
+import { authorizeRoles } from '../../auth/role.middleware';
+import { PERMISOS } from '../../auth/roles.constanst';
+
+
 
 const router = Router();
-
-
-// Tipado fila del CSV
+const isDev = process.env.NODE_ENV === 'development';
 
 interface AgenteCSVRow {
     Legajo: string;
@@ -16,191 +21,260 @@ interface AgenteCSVRow {
     dni: string;
 }
 
-
-// Tipado error Mongo
-
 interface MongoError extends Error {
     code?: number;
 }
 
 
-// Configuración de MULTER (subida de archivos)
+const uploadPath = path.join(__dirname, '../uploads');
+
+if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, '../uploads');
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath);
+    destination: (_, __, cb) => cb(null, uploadPath),
+    filename: (_, file, cb) => {
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '');
+        cb(null, `${Date.now()}-${safeName}`);
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+    fileFilter: (_, file, cb) => {
+        if (!file.mimetype.includes('csv')) {
+            cb(new Error('Solo se permiten archivos CSV'));
+        } else {
+            cb(null, true);
         }
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
     }
 });
 
-const upload = multer({ storage });
 
-// ============================
-// LISTAR
-// ============================
-router.get('/rAgentes', async (req, res) => {
+// VALIDADOR SIMPLE
+
+
+function validarAgente(body: any) {
+    const { nombre, dni, legajo } = body;
+
+    if (!nombre || typeof nombre !== 'string')
+        return 'El nombre es obligatorio';
+
+    if (!dni || isNaN(Number(dni)))
+        return 'El DNI debe ser numérico';
+
+    if (!legajo || isNaN(Number(legajo)))
+        return 'El legajo debe ser numérico';
+
+    return null;
+}
+
+
+router.get('/rAgentes', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES),
+    async (req, res) => {
+
+        console.log('ENTRO A RAGENTES');
+
+        try {
+
+            const search = req.query.search?.toString().trim() || '';
+            const tipo = req.query.tipo?.toString() || 'nombre';
+
+            console.log('SEARCH:', search);
+            console.log('TIPO:', tipo);
+
+            let filtro: any = {
+                activo: { $ne: false }
+            };
+
+            if (search !== '') {
+
+                if (tipo === 'nombre') {
+                    filtro.nombre = { $regex: search, $options: 'i' };
+                }
+
+                if (tipo === 'legajo') {
+                    filtro.legajo = search;
+                }
+            }
+
+            let query = AgenteModel.find(filtro)
+                .sort({ nombre: 1 });
+
+            if (search === '') {
+                query = query.limit(20);
+            }
+
+            const data = await query.lean();
+
+            return successResponse(res, data, 'Agentes obtenidos correctamente');
+
+        } catch (error) {
+
+            console.error(error);
+
+            return errorResponse(
+                res,
+                'Error al obtener agentes',
+                500
+            );
+        }
+    }
+);
+
+
+router.get('/rAgentes/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
-        const data = await AgenteModel.find().sort({ nombre: 1 });
-        res.json(data);
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'ID inválido', 400);
+        }
+
+        const agente = await AgenteModel.findById(id).lean();
+
+        if (!agente) {
+            return errorResponse(res, 'Agente no encontrado', 404);
+        }
+
+        return successResponse(res, agente, 'Agente obtenido correctamente');
+
     } catch (error) {
-        console.error('Error al obtener los agentes:', error);
-        res.status(500).json({ error: 'Error al obtener los agentes' });
+        console.error(error);
+        return errorResponse(res, 'Error al buscar agente', 500, isDev ? error : undefined);
     }
 });
 
-// ============================
-// BUSCAR POR ID
-// ============================
-router.get('/rAgentes/:id', async (req, res) => {
-    try {
-        const agente = await AgenteModel.findById(req.params.id);
-        if (!agente) return res.status(404).json({ error: 'Agente no encontrado' });
-        res.json(agente);
-    } catch (error) {
-        console.error('Error al buscar agente por ID:', error);
-        res.status(500).json({ error: 'Error al buscar agente' });
-    }
-});
 
-// ============================
-// CREAR
-// ============================
-router.post('/rAgentes', async (req, res) => {
+
+router.post('/rAgentes', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
-        const nuevoAgente = await AgenteModel.create(req.body);
-        res.status(201).json(nuevoAgente);
+        const errorValidacion = validarAgente(req.body);
+        if (errorValidacion) {
+            return errorResponse(res, errorValidacion, 400);
+        }
+
+        const nuevoAgente = await AgenteModel.create({
+            nombre: req.body.nombre.trim(),
+            dni: Number(req.body.dni),
+            legajo: Number(req.body.legajo)
+        });
+
+        return successResponse(res, nuevoAgente, 'Agente creado correctamente', 201);
+
     } catch (error: unknown) {
-
         const err = error as MongoError;
 
         if (err.code === 11000) {
-            return res.status(400).json({
-                error: 'El legajo o DNI ya está registrado'
-            });
+            return errorResponse(res, 'El legajo o DNI ya está registrado', 400);
         }
 
-        console.error('Error al crear el agente:', err);
-        res.status(500).json({ error: 'Error al crear el agente' });
+        console.error(err);
+        return errorResponse(res, 'Error al crear el agente', 500, isDev ? err : undefined);
     }
 });
 
-// ============================
-// ACTUALIZAR
-// ============================
-router.put('/rAgentes/:id', async (req, res) => {
+
+
+router.put('/rAgentes/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const { id } = req.params;
-        const { legajo, dni, nombre } = req.body;
 
-        const agenteActual = await AgenteModel.findById(id);
-        if (!agenteActual) {
-            return res.status(404).json({ error: 'Agente no encontrado' });
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'ID inválido', 400);
         }
 
-        // duplicado legajo
-        if (legajo && legajo !== agenteActual.legajo) {
-            const existeLegajo = await AgenteModel.findOne({ legajo, _id: { $ne: id } });
-            if (existeLegajo) {
-                return res.status(400).json({ error: 'Ya existe un agente con el mismo legajo.' });
-            }
-        }
-
-        // duplicado dni
-        if (dni && dni !== agenteActual.dni) {
-            const existeDni = await AgenteModel.findOne({ dni, _id: { $ne: id } });
-            if (existeDni) {
-                return res.status(400).json({ error: 'Ya existe un agente con el mismo DNI.' });
-            }
+        const errorValidacion = validarAgente(req.body);
+        if (errorValidacion) {
+            return errorResponse(res, errorValidacion, 400);
         }
 
         const actualizado = await AgenteModel.findByIdAndUpdate(
             id,
-            { nombre, dni, legajo },
-            { new: true }
+            {
+                nombre: req.body.nombre.trim(),
+                dni: Number(req.body.dni),
+                legajo: Number(req.body.legajo)
+            },
+            { new: true, runValidators: true }
         );
 
-        res.json(actualizado);
-
-    } catch (error) {
-        console.error('Error al actualizar el agente:', error);
-        res.status(500).json({ error: 'Error al actualizar el agente' });
-    }
-});
-
-// ============================
-// ELIMINAR
-// ============================
-router.delete('/rAgentes/:id', async (req, res) => {
-    try {
-        const eliminado = await AgenteModel.findByIdAndDelete(req.params.id);
-
-        if (!eliminado) {
-            return res.status(404).json({ error: 'Agente no encontrado' });
+        if (!actualizado) {
+            return errorResponse(res, 'Agente no encontrado', 404);
         }
 
-        res.json({ message: 'Agente eliminado correctamente' });
+        return successResponse(res, actualizado, 'Agente actualizado correctamente');
 
-    } catch (error) {
-        console.error('Error al eliminar el agente:', error);
-        res.status(500).json({ error: 'Error al eliminar el agente' });
+    } catch (error: unknown) {
+        const err = error as MongoError;
+
+        if (err.code === 11000) {
+            return errorResponse(res, 'El legajo o DNI ya está registrado', 400);
+        }
+
+        console.error(err);
+        return errorResponse(res, 'Error al actualizar el agente', 500, isDev ? err : undefined);
     }
 });
 
-// ============================
-// IMPORTAR CSV
-// ============================
-router.post('/rAgentes/importar-csv', upload.single('archivo'), async (req, res) => {
 
-    const file = req.file; // ahora si existe tipado
-    if (!file) {
-        return res.status(400).json({ error: 'No se subió ningún archivo CSV.' });
+
+router.post('/rAgentes/importar-csv', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), upload.single('archivo'), async (req, res) => {
+
+    if (!req.file) {
+        return errorResponse(res, 'No se subió ningún archivo CSV', 400);
     }
 
-    const filePath = file.path;
-
+    const filePath = req.file.path;
     const agentesNuevos: { nombre: string; dni: number; legajo: number }[] = [];
 
     try {
         fs.createReadStream(filePath)
-            .pipe(csvParser({ separator: ';' })) // tu CSV usa ;
+            .pipe(csvParser({ separator: ';' }))
             .on('data', (row: AgenteCSVRow) => {
-                const legajo = parseInt(row.Legajo);
+
+                const legajo = Number(row.Legajo);
                 const nombre = row.nombre?.trim();
-                const dni = parseInt(row.dni);
+                const dni = Number(row.dni);
 
                 if (!legajo || !nombre || !dni) return;
 
                 agentesNuevos.push({ nombre, dni, legajo });
             })
+            .on('error', (err) => {
+                console.error(err);
+                fs.unlinkSync(filePath);
+                return errorResponse(res, 'Error leyendo el CSV', 500, isDev ? err : undefined);
+            })
             .on('end', async () => {
                 try {
                     if (agentesNuevos.length > 0) {
-                        await AgenteModel.insertMany(agentesNuevos);
+                        await AgenteModel.insertMany(agentesNuevos, { ordered: false });
                     }
 
-                    fs.unlinkSync(filePath); // borrar archivo subido
+                    fs.unlinkSync(filePath);
 
-                    res.json({
-                        message: 'Importación completa',
-                        insertados: agentesNuevos.length
-                    });
+                    return successResponse(
+                        res,
+                        { insertados: agentesNuevos.length },
+                        'Importación completa'
+                    );
 
                 } catch (err) {
-                    console.error('Error al insertar nuevos agentes:', err);
-                    res.status(500).json({ error: 'Error al insertar nuevos agentes.' });
+                    console.error(err);
+                    fs.unlinkSync(filePath);
+                    return errorResponse(res, 'Error al insertar agentes', 500, isDev ? err : undefined);
                 }
             });
 
     } catch (err) {
-        console.error('Error al procesar el archivo CSV:', err);
-        res.status(500).json({ error: 'Error al procesar el archivo CSV.' });
+        console.error(err);
+        fs.unlinkSync(filePath);
+        return errorResponse(res, 'Error al procesar el archivo CSV', 500, isDev ? err : undefined);
     }
-});
+}
+);
 
 export default router;

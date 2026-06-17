@@ -55,20 +55,23 @@ export class LoginComponent implements OnInit, AfterViewInit {
         this.userService.login(this.dni, this.password).subscribe({
             next: (response) => {
 
-                if (response?.token && response?.user) {
+                if (response?.success && response?.data?.token) {
+
+                    const token = response.data.token;
+                    const user = response.data.user;
 
                     // Guardar token + usuario
-                    this.authService.guardarToken(response.token, response.user);
+                    this.authService.guardarToken(token, user);
 
                     // Guardar info rápida en localStorage
-                    localStorage.setItem('nombreUsuario', response.user.nombre || '');
-                    localStorage.setItem('rolUsuario', response.user.rol || '');
-                    localStorage.setItem('usuarioId', response.user.id || '');
+                    localStorage.setItem('nombreUsuario', user.nombre || '');
+                    localStorage.setItem('rolUsuario', user.rol || '');
+                    localStorage.setItem('usuarioId', user.id || '');
 
                     Swal.fire({
                         icon: 'success',
                         title: 'Bienvenido',
-                        text: `Hola ${response.user.nombre}`,
+                        text: `Hola ${user.nombre}`,
                         timer: 1500,
                         showConfirmButton: false
                     });

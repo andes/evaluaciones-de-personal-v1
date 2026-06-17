@@ -7,7 +7,7 @@ const Swal = require('sweetalert2').default;
 import { HeaderComponent } from '../../header/header.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
+import { HeaderSistemaComponent } from '../../header/header-sistema.component';
 
 @Component({
     selector: 'app-listar-planilla-ed',
@@ -17,7 +17,8 @@ import { FormsModule } from '@angular/forms';
     imports: [
         CommonModule,
         FormsModule,
-        HeaderComponent
+        HeaderComponent,
+        HeaderSistemaComponent
     ]
 })
 export class ListarPlanillaEDComponent implements OnInit {
@@ -69,9 +70,9 @@ export class ListarPlanillaEDComponent implements OnInit {
     }
     obtenerPlanillaED() {
         this._PlanillaEDService.getPlanillasED().subscribe(
-            (data: any[]) => {
-                this.listPlanillaED = data;
-                this.filterPlanillaED = data;
+            (resp: any) => {
+                this.listPlanillaED = resp.data;
+                this.filterPlanillaED = resp.data;
             },
             (error) => {
                 console.error('Error al obtener las planillas:', error);
@@ -101,10 +102,15 @@ export class ListarPlanillaEDComponent implements OnInit {
                     console.error('Error al eliminar la planilla:', error);
                 }
             );
-        }// 🔙 redirige a Home al presionar Aceptar
+        }//redirige a Home al presionar Aceptar
     }
 
 
+    editarPlanillaED(planilla: any) {
+
+
+        this.router.navigate(['/editar-planillaED', planilla._id]);
+    }
 
     /**
      * Método que se llama al presionar el botón "Listar".
@@ -112,8 +118,8 @@ export class ListarPlanillaEDComponent implements OnInit {
      */
     public ListarrPlanillaED(planillaId: string): void {
         this._PlanillaEDService.getPlanillaEDById(planillaId).subscribe({
-            next: (data) => {
-                this.generarPDF(data);
+            next: (resp) => {
+                this.generarPDF(resp.data);
             },
             error: (error) => {
                 console.error('Error al obtener la planilla para generar PDF:', error);

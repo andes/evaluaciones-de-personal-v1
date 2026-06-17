@@ -6,6 +6,7 @@ import { HeaderComponent } from '../../header/header.component';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
+
 const Swal = require('sweetalert2').default;
 
 @Component({
@@ -14,7 +15,7 @@ const Swal = require('sweetalert2').default;
     imports: [
         CommonModule,
         FormsModule,
-        HeaderComponent,   // ✔ ya funciona si es standalone
+        HeaderComponent
     ],
     templateUrl: './crear-PlanillaEDItems.component.html',
     styleUrls: ['./crear-PlanillaEDItems.component.css']
@@ -25,11 +26,15 @@ export class CrearPlanillaEDItemsComponent implements OnInit {
     descripcionPlanilla = '';
     efectorNombre = '';
     servicioNombre = '';
+
     categorias: any[] = [];
     categoriasPlanilla: any[] = [];
-    categoriaSeleccionada = '';
     items: any[] = [];
+
+    categoriaSeleccionada = '';
     itemSeleccionado = '';
+    idEvaluacion: string = '';
+    idAgente: string = '';
 
     constructor(
         private route: ActivatedRoute,
@@ -37,57 +42,59 @@ export class CrearPlanillaEDItemsComponent implements OnInit {
         private _CategoryService: CategoryService,
         private router: Router
     ) { }
-
     ngOnInit(): void {
 
-        // Primero obtenemos el ID desde la ruta (/crearplanillaItems/:id)
-        this.route.paramMap.subscribe(paramMap => {
-            this.idPlanilla = paramMap.get('id') ?? '';
+        // 1️⃣ Obtener ID de la planilla
+        this.idPlanilla = this.route.snapshot.paramMap.get('id') ?? '';
 
+        console.log('ID PLANILLA:', this.idPlanilla);
 
+        if (!this.idPlanilla) {
+            console.warn('⚠ No se recibió idPlanilla en la ruta');
+            return;
+        }
 
-            if (!this.idPlanilla) {
-                console.warn("⚠ No se recibió idPlanilla en paramMap");
-            }
-        });
-
-        // Luego obtenemos los datos adicionales por queryParams
+        // 2️⃣ Obtener query params
         this.route.queryParams.subscribe(params => {
-            this.descripcionPlanilla = params['descripcion'];
-            this.efectorNombre = params['efector'];
-            this.servicioNombre = params['servicio'];
-
-            this.cargarItems();
-            this.cargarCategorias();
-            this.cargarCategoriasDePlanilla();
+            this.descripcionPlanilla = params['descripcion'] ?? '';
+            this.efectorNombre = params['efector'] ?? '';
+            this.servicioNombre = params['servicio'] ?? '';
         });
 
+        // 3️⃣ Cargar datos
+        this.cargarItems();
+        this.cargarCategorias();
+        this.cargarCategoriasDePlanilla();
     }
-
 
     cargarItems(): void {
         this._PlanillaEDService.obtenerItems().subscribe({
-            next: items => this.items = items,
+            next: (resp: any) => this.items = resp?.data ?? [],
             error: err => console.error('Error al cargar items:', err)
         });
     }
 
     cargarCategorias(): void {
         this._CategoryService.obtenerCategoriasOrdenadas().subscribe({
-            next: categorias => this.categorias = categorias,
+            next: (resp: any[]) => {
+                console.log(resp);
+                this.categorias = resp;
+            },
             error: err => console.error('Error al cargar categorías:', err)
         });
     }
-
     cargarCategoriasDePlanilla(): void {
-        if (!this.idPlanilla) return;
 
         this._PlanillaEDService.obtenerCategoriasPorPlanilla(this.idPlanilla).subscribe({
-            next: data => this.categoriasPlanilla = data.categorias,
+            next: (resp: any) => {
+
+                console.log('RESPUESTA obtenerCategoriasPorPlanilla:', resp);
+
+                this.categoriasPlanilla = resp?.data?.categorias ?? [];
+            },
             error: err => console.error('Error al cargar categorías de la planilla:', err)
         });
     }
-
 
     aceptarSeleccion(): void {
 
@@ -111,9 +118,11 @@ export class CrearPlanillaEDItemsComponent implements OnInit {
         }
 
         this._PlanillaEDService.existsItemInPlanilla(this.idPlanilla, item.descripcion).subscribe({
-            next: response => {
+            next: (response: any) => {
 
-                if (response.exists) {
+                console.log('RESPUESTA existsItemInPlanilla:', response);
+
+                if (response?.exists) {
                     return Swal.fire({
                         icon: 'warning',
                         title: 'Ítem duplicado',
@@ -125,13 +134,32 @@ export class CrearPlanillaEDItemsComponent implements OnInit {
                     categoria: categoria._id,
                     descripcionCategoria: categoria.descripcion,
                     items: [
-                        { idItem: item._id, descripcion: item.descripcion, valor: item.valor }
+                        {
+                            idItem: item._id,
+                            descripcion: item.descripcion,
+                            valor: item.valor
+                        }
                     ]
                 };
 
+                console.log('ENVIANDO A agregarCategoriaItems:', categoriaConItems);
+
                 this._PlanillaEDService.agregarCategoriaItems(this.idPlanilla, categoriaConItems).subscribe({
-                    next: () => {
+                    next: (resp: any) => {
+
+                        console.log('RESPUESTA agregarCategoriaItems:', resp);
+
+                        // 🔎 Solo mostramos éxito si realmente el backend confirma éxito
+                        if (resp?.success === false) {
+                            return Swal.fire({
+                                icon: 'error',
+                                title: 'Error lógico',
+                                text: resp?.message || 'El backend no guardó correctamente.'
+                            });
+                        }
+
                         this.cargarCategoriasDePlanilla();
+
                         Swal.fire({
                             icon: 'success',
                             title: 'Guardado con éxito',
@@ -140,27 +168,18 @@ export class CrearPlanillaEDItemsComponent implements OnInit {
                     },
                     error: err => {
                         console.error('Error al guardar categoría/items:', err);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'No se pudo guardar la categoría e ítems.'
-                        });
+                        Swal.fire('Error', 'No se pudo guardar la categoría e ítems.', 'error');
                     }
                 });
             },
             error: err => {
                 console.error('Error al verificar ítem:', err);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Ocurrió un error al verificar la existencia del ítem.'
-                });
+                Swal.fire('Error', 'Ocurrió un error al verificar el ítem.', 'error');
             }
         });
     }
+
     navegarADetalle(categoriaId: string, descripcionCategoria: string): void {
-
-
         this.router.navigate([`/crearplanillaItemsDetalle/${this.idPlanilla}`], {
             queryParams: {
                 categoriaId,
@@ -170,11 +189,11 @@ export class CrearPlanillaEDItemsComponent implements OnInit {
         });
     }
 
-
     onPlanillaEDClick(): void {
         this.router.navigate(['/listar-planillaEDRouter']);
     }
-    volver() {
+
+    volver(): void {
         this.router.navigate(['/planillaed']);
     }
 }

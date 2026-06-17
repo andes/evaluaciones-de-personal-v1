@@ -1,93 +1,108 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { ItemModel } from './items.schema';
+import { verifyToken } from '../../auth/auth.middleware';
+import { successResponse, errorResponse } from '../../Utilidades/apiResponse';
+import { authorizeRoles } from '../../auth/role.middleware';
+import { PERMISOS } from '../../auth/roles.constanst';
 
 const router = Router();
 
-/**
- * GET /rEvaDesemp
- * Obtiene todos los ítems
- */
-router.get('/rEvaDesemp', async (req, res) => {
+
+router.get('/rEvaDesemp', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (_req, res) => {
     try {
-        const data = await ItemModel.find();
-        res.json(data);
+        const data = await ItemModel.find().lean();
+        return successResponse(res, data, 'Ítems obtenidos correctamente');
     } catch (error) {
-        res.status(500).json({ error: 'Error al obtener los ítems' });
+        console.error('[ITEMS_GET_ALL_ERROR]', error);
+        return errorResponse(res, 'No se pudieron obtener los ítems', 500);
     }
 });
 
-/**
- * GET /rEvaDesemp/:id
- * Obtiene un ítem por ID
- */
-router.get('/rEvaDesemp/:id', async (req, res) => {
+router.get('/rEvaDesemp/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
-        const item = await ItemModel.findById(req.params.id);
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'Solicitud inválida', 400);
+        }
+
+        const item = await ItemModel.findById(id).lean();
 
         if (!item) {
-            return res.status(404).json({ error: 'Ítem no encontrado' });
+            return errorResponse(res, 'Ítem no encontrado', 404);
         }
-        res.json(item);
+
+        return successResponse(res, item, 'Ítem obtenido correctamente');
     } catch (error) {
-        res.status(500).json({ error: 'Error al obtener el ítem' });
+        console.error('[ITEMS_GET_BY_ID_ERROR]', error);
+        return errorResponse(res, 'No se pudo obtener el ítem', 500);
     }
 });
 
-/**
- * POST /rEvaDesemp
- * Crea uno o varios ítems
- */
-router.post('/rEvaDesemp', async (req, res) => {
+
+router.post('/rEvaDesemp', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
-        if (Array.isArray(req.body)) {
-            const items = await ItemModel.insertMany(req.body);
-            return res.json(items);
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return errorResponse(res, 'Datos inválidos', 400);
         }
 
         const item = await ItemModel.create(req.body);
-        res.json(item);
+
+        return successResponse(res, item, 'Ítem creado correctamente', 201);
     } catch (error) {
-        res.status(500).json({ error: 'Error al crear el ítem' });
+        console.error('[ITEMS_CREATE_ERROR]', error);
+        return errorResponse(res, 'No se pudo crear el ítem', 500);
     }
 });
 
-/**
- * PUT /rEvaDesemp/:id
- * Actualiza totalmente un ítem
- */
-router.put('/rEvaDesemp/:id', async (req, res) => {
+
+router.put('/rEvaDesemp/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'Solicitud inválida', 400);
+        }
+
         const updated = await ItemModel.findByIdAndUpdate(
-            req.params.id,
+            id,
             req.body,
-            { new: true } // Devuelve el documento actualizado
+            {
+                new: true,
+                runValidators: true
+            }
         );
 
         if (!updated) {
-            return res.status(404).json({ error: 'Ítem no encontrado para actualizar' });
+            return errorResponse(res, 'Ítem no encontrado', 404);
         }
 
-        res.json(updated);
+        return successResponse(res, updated, 'Ítem actualizado correctamente');
     } catch (error) {
-        res.status(500).json({ error: 'Error al actualizar el ítem' });
+        console.error('[ITEMS_UPDATE_ERROR]', error);
+        return errorResponse(res, 'No se pudo actualizar el ítem', 500);
     }
 });
 
-/**
- * DELETE /rEvaDesemp/:id
- * Elimina un ítem por ID
- */
-router.delete('/rEvaDesemp/:id', async (req, res) => {
+router.delete('/rEvaDesemp/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
     try {
-        const deleted = await ItemModel.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
 
-        if (!deleted) {
-            return res.status(404).json({ error: 'Ítem no encontrado' });
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, 'Solicitud inválida', 400);
         }
 
-        res.json({ message: 'Ítem eliminado correctamente' });
+        const deleted = await ItemModel.findByIdAndDelete(id);
+
+        if (!deleted) {
+            return errorResponse(res, 'Ítem no encontrado', 404);
+        }
+
+        return successResponse(res, null, 'Ítem eliminado correctamente');
     } catch (error) {
-        res.status(500).json({ error: 'Error al eliminar el ítem' });
+        console.error('[ITEMS_DELETE_ERROR]', error);
+        return errorResponse(res, 'No se pudo eliminar el ítem', 500);
     }
 });
 
