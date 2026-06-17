@@ -335,7 +335,7 @@ export class EvaluacionAgenteComponent implements OnInit {
             return;
         }
 
-        // 🔥 Aseguramos el formato correcto del body
+        // Aseguramos el formato correcto del body
         const tipoCierre = {
             idTipoCierreEvaluacion: this.motivoSeleccionado._id,
             nombreTipoCierreEvaluacion: this.motivoSeleccionado.nombre,
@@ -362,8 +362,16 @@ export class EvaluacionAgenteComponent implements OnInit {
         });
     }
 
+
+    prueba() {
+        alert('FUNCIONA');
+        console.log('FUNCIONA');
+    }
+
+
     imprimirEvaluacion(agente: any): void {
-        const idAgente = agente.idAgenteEvaluado;
+
+        const idAgente = agente?.idAgenteEvaluado;
         const idCabecera = this.idCabecera;
 
         if (!idCabecera || !idAgente) {
@@ -371,9 +379,8 @@ export class EvaluacionAgenteComponent implements OnInit {
             return;
         }
 
-        // 🔹 Primero crgo los totales desde el backend
+        // 🔹 Primero cargamos los totales desde el backend
         this.cargarTotales(idCabecera, idAgente).then(() => {
-
 
             const totalItems = this.totalItemsConValor;
             const sumaPuntajes = this.sumaPuntajes;
@@ -381,14 +388,17 @@ export class EvaluacionAgenteComponent implements OnInit {
 
             // 🔹 Obtenemos la evaluación completa
             this.planillaEDListadosService.obtenerEvaluacionCompleta(idCabecera).subscribe(
-                (resp) => {
-                    if (!resp || !resp.detalles) {
+                (resp: any) => {
+
+                    const datos = resp.data;
+
+                    if (!datos || !datos.detalles) {
                         Swal.fire('Error', 'No se encontraron detalles para la evaluación', 'error');
                         return;
                     }
 
-                    const detalleAgente = resp.detalles.find(
-                        d => d.agenteEvaluado.idAgenteEvaluado === idAgente
+                    const detalleAgente = datos.detalles.find(
+                        (d: any) => d.agenteEvaluado.idAgenteEvaluado === idAgente
                     );
 
                     if (!detalleAgente) {
@@ -410,21 +420,32 @@ export class EvaluacionAgenteComponent implements OnInit {
                     doc.text(`Nombre: ${detalleAgente.agenteEvaluado.nombreAgenteEvaluado.toUpperCase()}`, 10, 38);
 
                     // 🔹 Datos de la evaluación
-                    doc.text(`Efector: ${resp.cabecera.Efector.nombre}`, 10, 50);
-                    doc.text(`Servicio: ${resp.cabecera.Servicio.nombre}`, 10, 58);
-                    doc.text(`Período: ${new Date(resp.cabecera.periodo).toLocaleDateString()}`, 10, 66);
+                    doc.text(`Efector: ${datos.cabecera.Efector.nombre}`, 10, 50);
+                    doc.text(`Servicio: ${datos.cabecera.Servicio.nombre}`, 10, 58);
+                    doc.text(`Período: ${new Date(datos.cabecera.periodo).toLocaleDateString()}`, 10, 66);
 
-                    // 🔹 Construcción de filas por categoría e ítems
+                    // 🔹 Construcción de filas
                     const bodyRows: any[] = [];
+
                     detalleAgente.categorias.forEach((cat: any) => {
+
                         bodyRows.push([{
                             content: cat.descripcionCategoria,
                             colSpan: 2,
-                            styles: { halign: 'left', fontStyle: 'bold', fillColor: [144, 238, 144] }
+                            styles: {
+                                halign: 'left',
+                                fontStyle: 'bold',
+                                fillColor: [144, 238, 144]
+                            }
                         }]);
+
                         cat.items.forEach((item: any) => {
-                            bodyRows.push([item.descripcion, item.puntaje]);
+                            bodyRows.push([
+                                item.descripcion,
+                                item.puntaje
+                            ]);
                         });
+
                     });
 
                     autoTable(doc, {
@@ -438,13 +459,14 @@ export class EvaluacionAgenteComponent implements OnInit {
                         }
                     });
 
-                    // 🔹 Final de tabla
+                    // 🔹 Posición final de la tabla
                     let finalY = 75;
+
                     if ((doc as any).lastAutoTable) {
                         finalY = (doc as any).lastAutoTable.finalY;
                     }
 
-                    // 🔹 Cuadro con totales
+                    // 🔹 Cuadro de totales
                     doc.setDrawColor(0);
                     doc.setFillColor(240, 240, 240);
                     doc.rect(10, finalY + 10, 190, 35, 'FD');
@@ -455,45 +477,61 @@ export class EvaluacionAgenteComponent implements OnInit {
                     doc.text(`Suma de puntajes: ${sumaPuntajes}`, 15, finalY + 25);
                     doc.text(`Promedio de puntaje: ${promedio.toFixed(2)}`, 15, finalY + 32);
 
-                    // 🔹 Estado y fecha de cierre (FUERA DEL CUADRO)
+                    // 🔹 Estado y fecha de cierre
                     let tipoCierre = '-';
-                    if (resp.cabecera.tipoCierreEvaluacion && resp.cabecera.tipoCierreEvaluacion.nombre) {
-                        tipoCierre = resp.cabecera.tipoCierreEvaluacion.nombre;
+
+                    if (
+                        datos.cabecera.tipoCierreEvaluacion &&
+                        datos.cabecera.tipoCierreEvaluacion.nombre
+                    ) {
+                        tipoCierre = datos.cabecera.tipoCierreEvaluacion.nombre;
                     }
 
                     let fechaCierreTexto = '';
+
                     if (tipoCierre !== 'Evaluación Abierta') {
-                        fechaCierreTexto = resp.cabecera.fechaCierre
-                            ? new Date(resp.cabecera.fechaCierre).toLocaleDateString()
+                        fechaCierreTexto = datos.cabecera.fechaCierre
+                            ? new Date(datos.cabecera.fechaCierre).toLocaleDateString()
                             : '-';
                     }
 
                     doc.setFont("helvetica", "normal");
                     doc.setFontSize(11);
-                    // Lo colocamos justo debajo del cuadro de totales
+
                     doc.text(`Estado de la evaluación: ${tipoCierre}`, 15, finalY + 50);
+
                     if (fechaCierreTexto) {
-                        doc.text(`Fecha de Cierre: ${fechaCierreTexto}`, 15, finalY + 58);
+                        doc.text(`Fecha de cierre: ${fechaCierreTexto}`, 15, finalY + 58);
                     }
 
                     // 🔹 Pie de página
                     const pageHeight = doc.internal.pageSize.height;
-                    doc.setFontSize(10);
-                    doc.setFont("helvetica", "normal");
-                    doc.text(`Generado el ${new Date().toLocaleDateString()} - Sistema de Evaluación`, 105, pageHeight - 10, { align: "center" });
 
-                    // 🔹 Guardamos el PDF
-                    doc.save(`Evaluacion_${detalleAgente.agenteEvaluado.nombreAgenteEvaluado}.pdf`);
+                    doc.setFontSize(10);
+                    doc.text(
+                        `Generado el ${new Date().toLocaleDateString()} - Sistema de Evaluación`,
+                        105,
+                        pageHeight - 10,
+                        { align: "center" }
+                    );
+
+                    // 🔹 Guardar PDF
+                    doc.save(
+                        `Evaluacion_${detalleAgente.agenteEvaluado.nombreAgenteEvaluado}.pdf`
+                    );
+
                 },
                 (err) => {
                     console.error('Error al obtener evaluación completa:', err);
                     Swal.fire('Error', 'No se pudo generar el PDF', 'error');
                 }
             );
+
         }).catch(err => {
             console.error('Error al cargar totales:', err);
             Swal.fire('Error', 'No se pudieron cargar los totales', 'error');
         });
+
     }
 
 }

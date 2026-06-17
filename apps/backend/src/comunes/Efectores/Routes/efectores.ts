@@ -7,7 +7,7 @@ import { PERMISOS } from '../../../auth/roles.constanst';
 
 const router = Router();
 
-router.get('/rmEfectores', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
+router.get('/rmEfectores', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const data = await EfectorModel.find().sort({ descripcion: 1 });
         return successResponse(res, data, 'Efectores obtenidos correctamente');
@@ -16,7 +16,7 @@ router.get('/rmEfectores', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), 
     }
 });
 
-router.get('/rmEfectores/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
+router.get('/rmEfectores/:id', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const respuesta = await EfectorModel.findById(req.params.id);
 
@@ -30,7 +30,7 @@ router.get('/rmEfectores/:id', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMI
     }
 });
 
-router.post('/rmEfectores', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (req, res) => {
+router.post('/rmEfectores', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req, res) => {
     try {
         const { nombre } = req.body;
 

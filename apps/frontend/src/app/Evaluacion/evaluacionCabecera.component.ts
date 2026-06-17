@@ -72,6 +72,7 @@ export class EvaluacionCabeceraComponent implements OnInit {
 
     ngOnInit(): void {
 
+
         this.nombreAgenteEvaluador = this.authService.getNombre();
 
         this.evaluacionCabecera = {
@@ -166,6 +167,8 @@ export class EvaluacionCabeceraComponent implements OnInit {
 
         this.serviciosService.getServicios().subscribe({
             next: (res) => {
+
+
                 this.servicios = res.data || [];
             },
             error: (err) => {

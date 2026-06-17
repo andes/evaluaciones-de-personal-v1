@@ -6,6 +6,7 @@ import { verifyToken } from '../auth/auth.middleware';
 import { successResponse, errorResponse } from '../Utilidades/apiResponse';
 import { authorizeRoles } from '../auth/role.middleware';
 import { PERMISOS } from '../auth/roles.constanst';
+import { User } from '../users/user.schema';
 
 const router = Router();
 

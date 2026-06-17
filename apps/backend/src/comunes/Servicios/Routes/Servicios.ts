@@ -2,19 +2,45 @@ import { Router, Request, Response } from 'express';
 import { ServicioModel } from '../Schemas/servicios';
 import { verifyToken } from '../../../auth/auth.middleware';
 import { successResponse, errorResponse } from '../../../Utilidades/apiResponse';
-import * as mongoose from 'mongoose';
 import { authorizeRoles } from '../../../auth/role.middleware';
+import * as mongoose from 'mongoose';
 import { PERMISOS } from '../../../auth/roles.constanst';
+import { User } from '../../../users/user.schema';
 
 const router = Router();
 
+router.get('/rmServicios', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (req: Request, res: Response) => {
 
-router.get('/rmServicios', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), async (_req: Request, res: Response) => {
     try {
 
-        const servicios = await ServicioModel
-            .find()
-            .sort({ descripcion: 1 });
+        const userId = (req as any).user.id;
+
+        const usuario = await User.findById(userId);
+
+        if (!usuario) {
+            return errorResponse(res, 'Usuario no encontrado', 404);
+        }
+
+        let servicios;
+
+        if (usuario.rol === 'administrador') {
+
+            servicios = await ServicioModel
+                .find()
+                .sort({ descripcion: 1 });
+
+        } else {
+
+            const idsServicios = usuario.servicios.map(
+                (s: any) => s.idServicio
+            );
+
+            servicios = await ServicioModel
+                .find({
+                    _id: { $in: idsServicios }
+                })
+                .sort({ descripcion: 1 });
+        }
 
         return successResponse(
             res,
@@ -24,10 +50,17 @@ router.get('/rmServicios', verifyToken, authorizeRoles(...PERMISOS.SOLO_ADMIN), 
         );
 
     } catch (error) {
+
         console.error('Error GET Servicios:', error);
-        return errorResponse(res, 'Error interno al obtener los servicios', 500);
+
+        return errorResponse(
+            res,
+            'Error interno al obtener los servicios',
+            500
+        );
     }
-});
+}
+);
 
 
 

@@ -1,4 +1,5 @@
 <app-header></app-header>
+<app-header-sistema></app-header-sistema>
 
 <div class="contenedor-principal">
     <div class="container-fluid mt-4 px-5">
@@ -123,7 +124,10 @@
                                             </a>
 
                                         </td>
-                                    </tr>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                (click)="imprimirEvaluacion(ev)" title="Imprimir evaluación">
+                                            <i class="fas fa-print"></i>
+                                        </button>
 
                                     <tr *ngIf="evaluaciones.length === 0">
                                         <td colspan="5" class="text-center text-muted py-3">

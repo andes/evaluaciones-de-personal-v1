@@ -13,9 +13,28 @@ const router = Router();
 
 // grilla resumen
 router.get('/evaluaciones-resumen', verifyToken, authorizeRoles(...PERMISOS.GESTION_AGENTES), async (_req: Request, res: Response) => {
-    console.log('REQ KEYS:', Object.keys(_req));
+
+    console.log('USUARIO LOGUEADO');
+    console.log((_req as any).user);
+
     try {
 
+        const usuarioToken = (_req as any).user;
+
+        const usuario = await User.findById(usuarioToken.id).lean();
+
+        if (!usuario) {
+            return errorResponse(res, 'Usuario no encontrado', 404);
+        }
+
+        const esAdmin = usuario.rol === 'administrador';
+
+        const serviciosPermitidos = (usuario.servicios || []).map(
+            (s: any) => s.idServicio
+        );
+
+        console.log('ES ADMIN:', esAdmin);
+        console.log('SERVICIOS PERMITIDOS:', serviciosPermitidos);
 
         const data = await EvaluacionDetalleModel.aggregate([
             {
@@ -26,16 +45,28 @@ router.get('/evaluaciones-resumen', verifyToken, authorizeRoles(...PERMISOS.GEST
                     as: 'cabecera'
                 }
             },
+
             { $unwind: '$cabecera' },
+
+            ...(esAdmin ? [] : [{
+                $match: {
+                    'cabecera.Servicio.idServicio': {
+                        $in: serviciosPermitidos
+                    }
+                }
+            }]),
+
             {
                 $project: {
-                    _id: 0,
+                    _id: '$cabecera._id',
+                    idCabecera: '$cabecera._id',
                     periodo: '$cabecera.periodo',
                     agenteEvaluado: 1,
                     agenteEvaluador: '$cabecera.agenteevaluador',
                     estado: '$tipoCierreEvaluacion.nombreTipoCierreEvaluacion'
                 }
             },
+
             {
                 $sort: {
                     'agenteEvaluado.nombreAgenteEvaluado': 1,
@@ -47,6 +78,8 @@ router.get('/evaluaciones-resumen', verifyToken, authorizeRoles(...PERMISOS.GEST
         return successResponse(res, data, 'Evaluaciones obtenidas correctamente');
 
     } catch (error) {
+
+        console.error(error);
 
         return errorResponse(res, 'Error interno', 500);
 
